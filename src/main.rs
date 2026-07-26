@@ -73,6 +73,36 @@ async fn main() -> Result<(), anyhow::Error> {
                 ))) => {
                     print!("{}", text);
                 }
+                Ok(MultiTurnStreamItem::StreamAssistantItem(
+                    StreamedAssistantContent::ToolCall {
+                        tool_call,
+                        internal_call_id,
+                    },
+                )) => {
+                    println!(">>> {}({})", tool_call.function.name, internal_call_id);
+                    println!(
+                        "{}",
+                        serde_json::to_string_pretty(&tool_call.function.arguments)?
+                    );
+                    println!(">>>");
+                }
+                Ok(MultiTurnStreamItem::StreamAssistantItem(
+                    StreamedAssistantContent::Reasoning(reasoning),
+                )) => {
+                    println!("=== {}", reasoning.id.unwrap_or_default());
+
+                    for reasoning in reasoning.content {
+                        match reasoning {
+                            rig::message::ReasoningContent::Text { text, signature: _ } => {
+                                println!("{}", text)
+                            }
+                            rig::message::ReasoningContent::Summary(text) => println!("{}", text),
+                            _ => {}
+                        }
+                    }
+
+                    println!("===");
+                }
                 Ok(_other) => { /* Do something with this chunk */ }
                 Err(e) => return Err(e.into()),
             }
@@ -210,7 +240,9 @@ async fn _edit_file(
     required(command)
 )]
 async fn shell_command(command: String) -> Result<String, rig::tool::ToolError> {
-    _shell_command(command).await.map_err(|err| err.into_boxed_dyn_error().into())
+    _shell_command(command)
+        .await
+        .map_err(|err| err.into_boxed_dyn_error().into())
 }
 
 async fn _shell_command(command: String) -> Result<String, anyhow::Error> {
