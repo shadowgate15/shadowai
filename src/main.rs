@@ -1,6 +1,7 @@
 use std::path::{Path, PathBuf};
 
-use rig::agent::MultiTurnStreamItem;
+use rig::agent::{AgentHook, Flow, MultiTurnStreamItem, StepEvent};
+use rig::prelude::CompletionModel;
 use rig::providers::ollama;
 use rig::streaming::StreamedAssistantContent;
 use rig::{client::CompletionClient, prelude::StreamingChat};
@@ -23,6 +24,7 @@ async fn main() -> Result<(), anyhow::Error> {
         .tool(GlobFiles)
         .tool(EditFile)
         .tool(ShellCommand)
+        .add_hook(RepairToolCall)
         .default_max_turns(5)
         .temperature(0.6)
         .additional_params(json!({
@@ -264,4 +266,20 @@ async fn _shell_command(command: String) -> Result<String, anyhow::Error> {
 
     let stdout = String::from_utf8(output.stdout)?;
     Ok(stdout.trim().to_string())
+}
+
+struct RepairToolCall;
+
+impl<M: CompletionModel> AgentHook<M> for RepairToolCall {
+    async fn on_event(&self, _ctx: &rig::agent::HookContext, event: StepEvent<'_, M>) -> Flow {
+        match event {
+            StepEvent::InvalidToolCall(ctx) if ctx.tool_name == "write_file" => {
+                Flow::repair("edit_file")
+            }
+            StepEvent::InvalidToolCall(ctx) => {
+                Flow::retry(format!("Use one of these tools: {:?}", ctx.available_tools))
+            }
+            _ => Flow::cont(),
+        }
+    }
 }
