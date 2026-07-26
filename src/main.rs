@@ -19,6 +19,7 @@ async fn main() -> Result<(), anyhow::Error> {
         .agent(MODEL)
         .preamble("**You are an AI coding assistant designed to help users build software.** You do not have access to any tools or file systems on the local computer. When working with code, architecture decisions, or implementation details, please ask the user for clarification, information about their existing setup, or confirmation before proceeding with changes.")
         .tool(ReadFile)
+        .tool(GlobFiles)
         .default_max_turns(5)
         .build();
 
@@ -100,7 +101,7 @@ async fn get_user_input() -> Result<UserInput, anyhow::Error> {
 async fn read_file(file: PathBuf) -> Result<String, rig::tool::ToolError> {
     _read_file(file)
         .await
-        .map_err(|err| rig::tool::ToolError::ToolCallError(format!("{}", err).into()))
+        .map_err(|err| err.into_boxed_dyn_error().into())
 }
 
 async fn _read_file(file: PathBuf) -> Result<String, anyhow::Error> {
@@ -110,4 +111,25 @@ async fn _read_file(file: PathBuf) -> Result<String, anyhow::Error> {
     file.read_to_string(&mut contents).await?;
 
     Ok(contents)
+}
+
+#[rig::tool_macro(
+    description = "List files matching a glob pattern (e.g., *.rs, src/**/*)",
+    required(pattern)
+)]
+async fn glob_files(pattern: String) -> Result<Vec<String>, rig::tool::ToolError> {
+    _glob_files(pattern)
+        .await
+        .map_err(|err| err.into_boxed_dyn_error().into())
+}
+
+async fn _glob_files(pattern: String) -> Result<Vec<String>, anyhow::Error> {
+    let mut results = Vec::new();
+    for entry in glob::glob(&pattern)? {
+        let path = entry?;
+        if path.is_file() {
+            results.push(path.to_string_lossy().into_owned());
+        }
+    }
+    Ok(results)
 }

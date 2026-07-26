@@ -6321,6 +6321,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "futures",
+ "glob",
  "rig",
  "serde",
  "serde_json",
