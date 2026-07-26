@@ -1,0 +1,14 @@
+[package]
+name = "shadowai-agent"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+rig.workspace = true
+tokio = { workspace = true, features = ["macros"] }
+tokio-stream.workspace = true
+tokio-util.workspace = true
+anyhow.workspace = true
+serde_json.workspace = true
+shadowai-tools.workspace = true
+

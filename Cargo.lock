@@ -6325,9 +6325,53 @@ dependencies = [
  "rig",
  "serde",
  "serde_json",
+ "shadowai-agent",
+ "shadowai-filesystem",
+ "shadowai-shell",
+ "shadowai-tools",
  "tokio",
  "tokio-stream",
  "tokio-util",
+]
+
+[[package]]
+name = "shadowai-agent"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "rig",
+ "serde_json",
+ "shadowai-tools",
+ "tokio",
+ "tokio-stream",
+ "tokio-util",
+]
+
+[[package]]
+name = "shadowai-filesystem"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "tokio",
+]
+
+[[package]]
+name = "shadowai-shell"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+]
+
+[[package]]
+name = "shadowai-tools"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "glob",
+ "rig",
+ "serde",
+ "serde_json",
+ "tokio",
 ]
 
 [[package]]

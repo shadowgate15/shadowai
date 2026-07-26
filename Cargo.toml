@@ -1,20 +1,48 @@
+[workspace]
+members = [
+  "crates/shadowai-agent",
+  "crates/shadowai-filesystem",
+  "crates/shadowai-shell",
+  "crates/shadowai-tools",
+]
+
 [package]
 name = "shadowai"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+anyhow.workspace = true
+futures.workspace = true
+glob.workspace = true
+rig.workspace = true
+serde = { workspace = true, features = ["derive"] }
+serde_json.workspace = true
+tokio = { workspace = true, features = [
+  "macros",
+  "rt-multi-thread",
+  "io-std",
+  "io-util",
+] }
+tokio-stream.workspace = true
+tokio-util = { workspace = true, features = ["codec"] }
+shadowai-agent.workspace = true
+shadowai-filesystem.workspace = true
+shadowai-shell.workspace = true
+shadowai-tools.workspace = true
+
+[workspace.dependencies]
+shadowai-agent = { path = "crates/shadowai-agent" }
+shadowai-filesystem = { path = "crates/shadowai-filesystem" }
+shadowai-shell = { path = "crates/shadowai-shell" }
+shadowai-tools = { path = "crates/shadowai-tools" }
+
 anyhow = "1.0.104"
 futures = "0.3.33"
 glob = "0.3.4"
 rig = "0.40.0"
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
-tokio = { version = "1.53.1", features = [
-  "macros",
-  "rt-multi-thread",
-  "io-std",
-  "io-util",
-] }
+tokio = "1.53.1"
 tokio-stream = "0.1.19"
-tokio-util = { version = "0.7.19", features = ["codec"] }
+tokio-util = "0.7.19"
