@@ -4,6 +4,7 @@ use rig::agent::MultiTurnStreamItem;
 use rig::providers::ollama;
 use rig::streaming::StreamedAssistantContent;
 use rig::{client::CompletionClient, prelude::StreamingChat};
+use serde_json::json;
 use tokio::io::{self, AsyncReadExt};
 use tokio_stream::StreamExt;
 use tokio_util::codec::{FramedRead, LinesCodec};
@@ -21,6 +22,15 @@ async fn main() -> Result<(), anyhow::Error> {
         .tool(ReadFile)
         .tool(GlobFiles)
         .default_max_turns(5)
+        .temperature(0.6)
+        .additional_params(json!({
+            "options": {
+                "num_ctx": 32768,
+                "num_predict": -1,
+                "top_p": 0.95,
+                "top_k": 20
+            }
+        }))
         .build();
 
     println!(
