@@ -42,6 +42,18 @@ async fn main() -> Result<(), anyhow::Error> {
                 Ok(MultiTurnStreamItem::FinalResponse(fin)) => {
                     history.extend_from_slice(fin.messages().unwrap_or_default());
 
+                    println!();
+                    println!();
+                    let usage = fin.usage();
+                    println!(
+                        "{} rsponse end ({}/{}) {}",
+                        "=".repeat(10),
+                        usage.input_tokens,
+                        usage.output_tokens,
+                        "=".repeat(10)
+                    );
+                    println!();
+
                     break;
                 }
                 Ok(MultiTurnStreamItem::StreamAssistantItem(StreamedAssistantContent::Text(
@@ -53,11 +65,6 @@ async fn main() -> Result<(), anyhow::Error> {
                 Err(e) => return Err(e.into()),
             }
         }
-
-        println!();
-        println!();
-        println!("{} response end {}", "=".repeat(10), "=".repeat(10));
-        println!();
     }
 
     Ok(())
