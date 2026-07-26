@@ -1,11 +1,11 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use rig::agent::MultiTurnStreamItem;
 use rig::providers::ollama;
 use rig::streaming::StreamedAssistantContent;
 use rig::{client::CompletionClient, prelude::StreamingChat};
 use serde_json::json;
-use tokio::io::{self, AsyncReadExt};
+use tokio::io::{self, AsyncReadExt, AsyncWriteExt};
 use tokio_stream::StreamExt;
 use tokio_util::codec::{FramedRead, LinesCodec};
 
@@ -18,9 +18,10 @@ async fn main() -> Result<(), anyhow::Error> {
     // Build an agent: a model plus a system prompt (the "preamble").
     let agent = client
         .agent(MODEL)
-        .preamble("**You are an AI coding assistant designed to help users build software.** You have access to tools for reading files (e.g., `ReadFile`) and listing files via glob patterns (e.g., `GlobFiles`). When working on code, architecture decisions, or implementation details, please ask the user for clarification, information about their existing setup, or confirmation before proceeding with changes.")
+        .preamble("**You are an AI coding assistant designed to help users build software.** You have access to tools for reading files (e.g., `ReadFile`), listing files via glob patterns (e.g., `GlobFiles`), and writing/editing files (`Edit`). When working on code, architecture decisions, or implementation details, please ask the user for clarification, information about their existing setup, or confirmation before proceeding with changes.")
         .tool(ReadFile)
         .tool(GlobFiles)
+        .tool(EditFile)
         .default_max_turns(5)
         .temperature(0.6)
         .additional_params(json!({
@@ -149,4 +150,56 @@ async fn _glob_files(pattern: String) -> Result<Vec<String>, anyhow::Error> {
         }
     }
     Ok(results)
+}
+
+#[rig::tool_macro(
+    description = "Replace occurrences of old_text with new_text in a file (creates the file if it doesn't exist).",
+    required(file),
+    required(old_text),
+    required(new_text)
+)]
+async fn edit_file(
+    file: PathBuf,
+    old_text: String,
+    new_text: String,
+) -> Result<String, rig::tool::ToolError> {
+    _edit_file(file, old_text, new_text)
+        .await
+        .map_err(|err| err.into_boxed_dyn_error().into())
+}
+
+async fn _edit_file(
+    file: PathBuf,
+    old_text: String,
+    new_text: String,
+) -> Result<String, anyhow::Error> {
+    let parent = file.parent().unwrap_or(Path::new("."));
+    tokio::fs::create_dir_all(parent).await?;
+
+    // Try to open existing file first
+    match tokio::fs::File::open(&file).await {
+        Ok(mut f) => {
+            let mut contents = String::new();
+            f.read_to_string(&mut contents).await?;
+
+            let modified = contents.replace(old_text.as_str(), new_text.as_str());
+
+            if modified == contents {
+                return Err(anyhow::anyhow!(
+                    "No occurrences of '{old_text}' found in the file."
+                ));
+            }
+
+            let mut out = tokio::fs::File::create(&file).await?;
+            out.write_all(modified.as_bytes()).await?;
+            Ok(modified)
+        }
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+            // File doesn't exist — create it fresh with new_text
+            let mut f = tokio::fs::File::create(&file).await?;
+            f.write_all(new_text.as_bytes()).await?;
+            Ok(new_text)
+        }
+        Err(e) => Err(e.into()), // Some other error
+    }
 }
