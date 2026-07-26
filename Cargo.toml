@@ -7,4 +7,11 @@ edition = "2024"
 anyhow = "1.0.104"
 futures = "0.3.33"
 rig = "0.40.0"
-tokio = { version = "1.53.1", features = ["macros", "rt-multi-thread"] }
+tokio = { version = "1.53.1", features = [
+  "macros",
+  "rt-multi-thread",
+  "io-std",
+  "io-util",
+] }
+tokio-stream = "0.1.19"
+tokio-util = { version = "0.7.19", features = ["codec"] }
