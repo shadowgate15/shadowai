@@ -1,8 +1,10 @@
+use std::path::PathBuf;
+
 use rig::agent::MultiTurnStreamItem;
 use rig::providers::ollama;
 use rig::streaming::StreamedAssistantContent;
 use rig::{client::CompletionClient, prelude::StreamingChat};
-use tokio::io;
+use tokio::io::{self, AsyncReadExt};
 use tokio_stream::StreamExt;
 use tokio_util::codec::{FramedRead, LinesCodec};
 
@@ -16,6 +18,8 @@ async fn main() -> Result<(), anyhow::Error> {
     let agent = client
         .agent(MODEL)
         .preamble("**You are an AI coding assistant designed to help users build software.** You do not have access to any tools or file systems on the local computer. When working with code, architecture decisions, or implementation details, please ask the user for clarification, information about their existing setup, or confirmation before proceeding with changes.")
+        .tool(ReadFile)
+        .default_max_turns(5)
         .build();
 
     println!(
@@ -90,4 +94,20 @@ async fn get_user_input() -> Result<UserInput, anyhow::Error> {
     }
 
     Ok(UserInput::Input(input))
+}
+
+#[rig::tool_macro(description = "Read a file from the filesystem", required(file))]
+async fn read_file(file: PathBuf) -> Result<String, rig::tool::ToolError> {
+    _read_file(file)
+        .await
+        .map_err(|err| rig::tool::ToolError::ToolCallError(format!("{}", err).into()))
+}
+
+async fn _read_file(file: PathBuf) -> Result<String, anyhow::Error> {
+    let mut file = tokio::fs::File::open(file).await?;
+    let mut contents = String::new();
+
+    file.read_to_string(&mut contents).await?;
+
+    Ok(contents)
 }
