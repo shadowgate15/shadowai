@@ -18,7 +18,7 @@ async fn main() -> Result<(), anyhow::Error> {
     // Build an agent: a model plus a system prompt (the "preamble").
     let agent = client
         .agent(MODEL)
-        .preamble("**You are an AI coding assistant designed to help users build software.** You do not have access to any tools or file systems on the local computer. When working with code, architecture decisions, or implementation details, please ask the user for clarification, information about their existing setup, or confirmation before proceeding with changes.")
+        .preamble("**You are an AI coding assistant designed to help users build software.** You have access to tools for reading files (e.g., `ReadFile`) and listing files via glob patterns (e.g., `GlobFiles`). When working on code, architecture decisions, or implementation details, please ask the user for clarification, information about their existing setup, or confirmation before proceeding with changes.")
         .tool(ReadFile)
         .tool(GlobFiles)
         .default_max_turns(5)
