@@ -1,15 +1,13 @@
 use std::path::{Path, PathBuf};
-
-#[cfg(feature = "tokio")]
-use tokio;
+use tokio::io::AsyncReadExt;
+use tokio::io::AsyncWriteExt;
 
 /// Read a file from the filesystem.
-#[rig::tool_macro(
-    description = "Read a file from the filesystem",
-    required(file)
-)]
+#[rig::tool_macro(description = "Read a file from the filesystem", required(file))]
 pub async fn read_file(file: PathBuf) -> Result<String, rig::tool::ToolError> {
-    _read_file(file).await.map_err(|err| err.into_boxed_dyn_error().into())
+    _read_file(file)
+        .await
+        .map_err(|err| err.into_boxed_dyn_error().into())
 }
 
 async fn _read_file(file: PathBuf) -> Result<String, anyhow::Error> {
@@ -25,7 +23,9 @@ async fn _read_file(file: PathBuf) -> Result<String, anyhow::Error> {
     required(pattern)
 )]
 pub async fn glob_files(pattern: String) -> Result<Vec<String>, rig::tool::ToolError> {
-    _glob_files(pattern).await.map_err(|err| err.into_boxed_dyn_error().into())
+    _glob_files(pattern)
+        .await
+        .map_err(|err| err.into_boxed_dyn_error().into())
 }
 
 async fn _glob_files(pattern: String) -> Result<Vec<String>, anyhow::Error> {
@@ -51,7 +51,9 @@ pub async fn edit_file(
     old_text: String,
     new_text: String,
 ) -> Result<String, rig::tool::ToolError> {
-    _edit_file(file, old_text, new_text).await.map_err(|err| err.into_boxed_dyn_error().into())
+    _edit_file(file, old_text, new_text)
+        .await
+        .map_err(|err| err.into_boxed_dyn_error().into())
 }
 
 async fn _edit_file(
@@ -96,7 +98,9 @@ async fn _edit_file(
     required(command)
 )]
 pub async fn shell_command(command: String) -> Result<String, rig::tool::ToolError> {
-    _shell_command(command).await.map_err(|err| err.into_boxed_dyn_error().into())
+    _shell_command(command)
+        .await
+        .map_err(|err| err.into_boxed_dyn_error().into())
 }
 
 async fn _shell_command(command: String) -> Result<String, anyhow::Error> {
@@ -131,12 +135,10 @@ impl<M: rig::prelude::CompletionModel> rig::agent::AgentHook<M> for RepairToolCa
             rig::agent::StepEvent::InvalidToolCall(ctx) if ctx.tool_name == "write_file" => {
                 rig::agent::Flow::repair("edit_file")
             }
-            rig::agent::StepEvent::InvalidToolCall(_) => {
-                rig::agent::Flow::retry(format!(
-                    "Use one of these tools: {:?}",
-                    ctx.available_tools
-                ))
-            }
+            rig::agent::StepEvent::InvalidToolCall(ctx) => rig::agent::Flow::retry(format!(
+                "Use one of these tools: {:?}",
+                ctx.available_tools
+            )),
             _ => rig::agent::Flow::cont(),
         }
     }

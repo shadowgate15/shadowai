@@ -1,13 +1,11 @@
-use std::io::{self, AsyncReadExt, AsyncWriteExt};
-use std::path::Path;
-
-use rig::agent::{AgentHook, Flow, MultiTurnStreamItem, StepEvent};
-use rig::prelude::CompletionModel;
+use rig::client::CompletionClient;
+use rig::prelude::StreamingChat;
 use rig::streaming::StreamedAssistantContent;
+use rig::{agent::MultiTurnStreamItem, providers::ollama};
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use serde_json::json;
-use tokio::io::{AsyncReadExt as TokioAsyncReadExt, AsyncWriteExt as TokioAsyncWriteExt};
+use tokio::io;
 use tokio_stream::StreamExt;
 use tokio_util::codec::{FramedRead, LinesCodec};
 
@@ -15,8 +13,8 @@ use tokio_util::codec::{FramedRead, LinesCodec};
 pub struct AgentConfig {
     pub model: String,
     pub system_prompt: String,
-    pub temperature: f32,
-    pub default_max_turns: u32,
+    pub temperature: f64,
+    pub default_max_turns: usize,
 }
 
 impl Default for AgentConfig {
@@ -53,20 +51,7 @@ impl ConversationHistory {
 
     /// Extend the history with new assistant/user messages from a finished stream.
     pub fn extend_from_slice(&mut self, msgs: &[rig::message::Message]) {
-        if let Some(last_user) = self.messages.last() {
-            // The user's message is already in history; just append new ones.
-            for msg in msgs {
-                if !msg.is_assistant_or_tool() && last_user.content().is_empty() {
-                    break;
-                }
-                self.messages.push(msg.clone());
-            }
-        } else {
-            // First turn — add all messages from the response.
-            for msg in msgs {
-                self.messages.push(msg.clone());
-            }
-        }
+        self.messages.extend_from_slice(msgs);
     }
 
     /// Reset history (clears all stored messages).
@@ -121,10 +106,10 @@ pub async fn run_agent_loop(config: AgentConfig) -> Result<()> {
     let agent = client
         .agent(&config.model)
         .preamble(&config.system_prompt)
-        .tool(shadowai_tools::read_file)
-        .tool(shadowai_tools::glob_files)
-        .tool(shadowai_tools::edit_file)
-        .tool(shadowai_tools::shell_command)
+        .tool(shadowai_tools::ReadFile)
+        .tool(shadowai_tools::GlobFiles)
+        .tool(shadowai_tools::EditFile)
+        .tool(shadowai_tools::ShellCommand)
         .add_hook(shadowai_tools::RepairToolCall)
         .default_max_turns(config.default_max_turns)
         .temperature(config.temperature)
@@ -148,11 +133,7 @@ pub async fn run_agent_loop(config: AgentConfig) -> Result<()> {
 
     while let UserInput::Input(input) = get_user_input().await? {
         println!();
-        println!(
-            "{} response start {}",
-            "=".repeat(10),
-            "=".repeat(10)
-        );
+        println!("{} response start {}", "=".repeat(10), "=".repeat(10));
         println!();
 
         let mut stream = agent.stream_chat(input, &history.messages).await;
@@ -176,9 +157,9 @@ pub async fn run_agent_loop(config: AgentConfig) -> Result<()> {
 
                     break;
                 }
-                Ok(MultiTurnStreamItem::StreamAssistantItem(
-                    StreamedAssistantContent::Text(text),
-                )) => {
+                Ok(MultiTurnStreamItem::StreamAssistantItem(StreamedAssistantContent::Text(
+                    text,
+                ))) => {
                     print!("{}", text);
                 }
                 Ok(MultiTurnStreamItem::StreamAssistantItem(
@@ -223,4 +204,4 @@ pub async fn run_agent_loop(config: AgentConfig) -> Result<()> {
 }
 
 // Re-export key items from shadowai-tools so downstream crates can use them directly.
-pub use shadowai_tools::{read_file, edit_file, glob_files, shell_command};
+pub use shadowai_tools::{edit_file, glob_files, read_file, shell_command};

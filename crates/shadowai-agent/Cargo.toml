@@ -4,8 +4,11 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-rig = { version = "0.5", features = ["tokio-runtime"] }
-tokio = { version = "1", features = ["full"] }
-anyhow = "1"
-serde_json = "1"
-shadowai-tools = { path = "../shadowai-tools" }
+rig.workspace = true
+tokio = { workspace = true, features = ["macros"] }
+tokio-stream.workspace = true
+tokio-util.workspace = true
+anyhow.workspace = true
+serde_json.workspace = true
+shadowai-tools.workspace = true
+

@@ -1,4 +1,5 @@
 /// Result of executing a shell command, capturing full output and exit status.
+#[derive(Debug)]
 pub struct ShellResult {
     pub stdout: String,
     pub stderr: String,
