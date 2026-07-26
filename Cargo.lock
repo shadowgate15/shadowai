@@ -6320,6 +6320,7 @@ name = "shadowai"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "futures",
  "rig",
  "tokio",
 ]
