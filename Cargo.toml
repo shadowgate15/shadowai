@@ -1,3 +1,11 @@
+[workspace]
+members = [
+    "crates/shadowai-agent",
+    "crates/shadowai-filesystem",
+    "crates/shadowai-shell",
+    "crates/shadowai-tools",
+]
+
 [package]
 name = "shadowai"
 version = "0.1.0"
@@ -18,3 +26,15 @@ tokio = { version = "1.53.1", features = [
 ] }
 tokio-stream = "0.1.19"
 tokio-util = { version = "0.7.19", features = ["codec"] }
+
+[dependencies.shadowai-filesystem]
+path = "crates/shadowai-filesystem"
+
+[dependencies.shadowai-shell]
+path = "crates/shadowai-shell"
+
+[dependencies.shadowai-tools]
+path = "crates/shadowai-tools"
+
+[dependencies.shadowai-agent]
+path = "crates/shadowai-agent"
