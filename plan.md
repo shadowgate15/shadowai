@@ -58,7 +58,7 @@ pub async fn run_agent_loop(config: AgentConfig) -> Result<(), anyhow::Error>
 - `UserInput` enum (`Input(String)`, `Exit`) — internal to this crate
 - `ConversationHistory` — manages the message history slice
 
-**Dependencies**: Only `rig`, `anyhow`. No external I/O concerns.
+**Dependencies**: `rig`, `shadowai-tools`. The agent depends on tools because it needs to receive, dispatch, and handle tool calls from the conversation loop.
 
 
 ## 2. `shadowai-filesystem` — Filesystem Operations Domain
@@ -128,14 +128,14 @@ pub struct ToolRegistry {
 
 impl ToolRegistry {
     pub fn new() -> Self;
-    pub async fn register(&mut self, agent: &Agent);  // wires tools into the rig Agent
+    pub async fn register(&mut self);  // wires tools into the rig Agent via rig's mechanism
 }
 ```
 
 **Internal types**:
 - `RepairHook` — implements `rig::agent::AgentHook` to handle tool-call repair logic (mirrors existing `RepairToolCall`)
 
-**Dependencies**: `shadowai-agent`, `shadowai-filesystem`, `shadowai-shell`, `rig`.
+**Dependencies**: `shadowai-filesystem`, `shadowai-shell`, `rig`. The tools crate bridges the pure domain crates with rig's tool system.
 
 
 ## 5. Root Workspace (`Cargo.toml`)
@@ -152,7 +152,7 @@ use shadowai_tools::ToolRegistry;
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
     let config = AgentConfig { /* ... */ };
-    ToolRegistry::new().register(&agent).await?;
+    ToolRegistry::new().register().await?;
     run_agent_loop(config).await
 }
 ```
@@ -161,22 +161,22 @@ async fn main() -> Result<(), anyhow::Error> {
 ## 6. Dependency Graph
 
 ```
-shadowai-agent        ← depends on nothing (pure domain)
-shadowai-filesystem   ← depends on nothing (pure domain)
-shadowai-shell        ← depends on nothing (pure domain)
-shadowai-tools        ← depends on agent, filesystem, shell (integration)
+shadowai-filesystem   ← pure domain (no deps)
+shadowai-shell        ← pure domain (no deps)
+shadowai-agent        ← depends on shadowai-tools (integration layer — needs tools to handle tool calls)
+shadowai-tools        ← depends on filesystem, shell (integration)
 main.rs binary        ← depends on all four crates + rig
 ```
 
-This follows the **Dependency Inversion Principle**: domain entities own their logic; integration/context layers depend on them.
+This follows the **Dependency Inversion Principle**: domain entities own their logic; integration/context layers depend on them. The `shadowai-agent` is not a pure domain — it depends on `shadowai-tools` because it needs to receive, dispatch, and handle tool calls from the conversation loop.
 
 
 ## 7. Migration Steps
 
-1. Create `crates/shadowai-filesystem/src/lib.rs` — extract file operations
-2. Create `crates/shadowai-shell/src/lib.rs` — extract shell execution
-3. Create `crates/shadowai-agent/src/lib.rs` — extract conversation logic
-4. Create `crates/shadowai-tools/src/lib.rs` — define tools & repair hook
+1. Create `crates/shadowai-filesystem/src/lib.rs` — extract file operations (pure domain)
+2. Create `crates/shadowai-shell/src/lib.rs` — extract shell execution (pure domain)
+3. Create `crates/shadowai-tools/src/lib.rs` — define tools & repair hook (depends on filesystem + shell domains)
+4. Create `crates/shadowai-agent/src/lib.rs` — extract conversation logic (depends on shadowai-tools)
 5. Update root `Cargo.toml` as a workspace with 4 members + binary
 6. Slim down `src/main.rs` to orchestrate the four crates
 
