@@ -1,5 +1,5 @@
 use rig::client::CompletionClient;
-use rig::completion::Prompt;
+use rig::integrations::cli_chatbot::ChatBotBuilder;
 use rig::providers::ollama;
 
 const MODEL: &str = "ornith";
@@ -14,12 +14,8 @@ async fn main() -> Result<(), anyhow::Error> {
         .preamble("You are a coding assistant that helps the user build software.")
         .build();
 
-    // Send a prompt and await the model's reply.
-    let response = agent
-        .prompt("What is the Rust programming language?")
-        .await?;
-
-    println!("{response}");
+    let chatbot = ChatBotBuilder::new().agent(agent).show_usage().build();
+    chatbot.run().await?;
 
     Ok(())
 }
