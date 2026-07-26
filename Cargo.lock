@@ -6323,6 +6323,8 @@ dependencies = [
  "futures",
  "rig",
  "tokio",
+ "tokio-stream",
+ "tokio-util",
 ]
 
 [[package]]
