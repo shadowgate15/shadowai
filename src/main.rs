@@ -11,7 +11,7 @@ async fn main() -> Result<(), anyhow::Error> {
     // Build an agent: a model plus a system prompt (the "preamble").
     let agent = client
         .agent(MODEL)
-        .preamble("You are a coding assistant that helps the user build software.")
+        .preamble("**You are an AI coding assistant designed to help users build software.** You do not have access to any tools or file systems on the local computer. When working with code, architecture decisions, or implementation details, please ask the user for clarification, information about their existing setup, or confirmation before proceeding with changes.")
         .build();
 
     let chatbot = ChatBotBuilder::new().agent(agent).show_usage().build();
