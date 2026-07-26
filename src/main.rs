@@ -79,6 +79,7 @@ async fn main() -> Result<(), anyhow::Error> {
                         internal_call_id,
                     },
                 )) => {
+                    println!();
                     println!(">>> {}({})", tool_call.function.name, internal_call_id);
                     println!(
                         "{}",
@@ -89,6 +90,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 Ok(MultiTurnStreamItem::StreamAssistantItem(
                     StreamedAssistantContent::Reasoning(reasoning),
                 )) => {
+                    println!();
                     println!("=== {}", reasoning.id.unwrap_or_default());
 
                     for reasoning in reasoning.content {
