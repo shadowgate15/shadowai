@@ -6322,6 +6322,8 @@ dependencies = [
  "anyhow",
  "futures",
  "rig",
+ "serde",
+ "serde_json",
  "tokio",
  "tokio-stream",
  "tokio-util",
