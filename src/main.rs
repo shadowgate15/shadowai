@@ -25,7 +25,7 @@ async fn main() -> Result<(), anyhow::Error> {
         .tool(EditFile)
         .tool(ShellCommand)
         .add_hook(RepairToolCall)
-        .default_max_turns(5)
+        .default_max_turns(100)
         .temperature(0.6)
         .additional_params(json!({
             "options": {
