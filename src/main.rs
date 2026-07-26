@@ -22,6 +22,7 @@ async fn main() -> Result<(), anyhow::Error> {
         .tool(ReadFile)
         .tool(GlobFiles)
         .tool(EditFile)
+        .tool(ShellCommand)
         .default_max_turns(5)
         .temperature(0.6)
         .additional_params(json!({
@@ -202,4 +203,31 @@ async fn _edit_file(
         }
         Err(e) => Err(e.into()), // Some other error
     }
+}
+
+#[rig::tool_macro(
+    description = "Execute a bash/shell command on the host machine and return its stdout output.",
+    required(command)
+)]
+async fn shell_command(command: String) -> Result<String, rig::tool::ToolError> {
+    _shell_command(command).await.map_err(|err| err.into_boxed_dyn_error().into())
+}
+
+async fn _shell_command(command: String) -> Result<String, anyhow::Error> {
+    let output = std::process::Command::new("bash")
+        .arg("-c")
+        .arg(&command)
+        .output()?;
+
+    if !output.status.success() {
+        return Err(anyhow::anyhow!(
+            "Command failed (exit code {}): {}\n{}",
+            output.status,
+            String::from_utf8_lossy(&output.stderr),
+            String::from_utf8_lossy(&output.stdout)
+        ));
+    }
+
+    let stdout = String::from_utf8(output.stdout)?;
+    Ok(stdout.trim().to_string())
 }
