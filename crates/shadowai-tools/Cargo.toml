@@ -12,4 +12,3 @@ thiserror.workspace = true
 shadowai-filesystem.workspace = true
 shadowai-shell.workspace = true
 schemars.workspace = true
-fetchkit.workspace = true

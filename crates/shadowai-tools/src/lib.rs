@@ -2,13 +2,11 @@ mod edit;
 mod glob;
 mod read;
 mod shell;
-mod web_fetch;
 
 pub use edit::EditTool;
 pub use glob::GlobTool;
 pub use read::ReadTool;
 pub use shell::ShellTool;
-pub use web_fetch::WebFetchTool;
 
 /// Repair hook that handles invalid tool calls.
 pub struct RepairToolCall;
