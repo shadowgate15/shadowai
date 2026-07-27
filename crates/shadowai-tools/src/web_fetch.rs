@@ -19,6 +19,12 @@ pub struct WebFetchArgs {
 #[derive(Deserialize, Serialize)]
 pub struct WebFetchTool;
 
+impl WebFetchTool {
+    pub fn description() -> &'static str {
+        FETCH_TOOL.description()
+    }
+}
+
 impl Tool for WebFetchTool {
     const NAME: &'static str = "web_fetch";
 
