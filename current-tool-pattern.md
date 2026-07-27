@@ -20,11 +20,11 @@ Each tool lives in its own `.rs` file and follows this structure:
 ### 1. Struct Definition
 
 ```rust
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, JsonSchema)]
 pub struct ToolName;
 ```
 
-The struct is unit-style (`ToolName;`). It derives both `Deserialize` (for parsing JSON args) and `Serialize` (so the tool schema can be serialized).
+The struct is unit-style (`ToolName;`). It derives `Deserialize` (for parsing JSON args) and `JsonSchema` (so the tool's argument schema can be auto-generated via schemars). The struct itself is never serialized — only its field types are inspected by rig at runtime.
 
 ### 2. DESCRIPTION Constant
 
@@ -41,7 +41,7 @@ impl ToolName {
 Every tool implements `rig::tool::Tool`:
 
 | Field | Notes |
-|-------|-------|
+|-------|---------|
 | `const NAME` | Short identifier, e.g. `"read"`, `"shell"`. Used by the agent to route calls. |
 | `type Error` | The error type returned on failure (e.g., `std::io::Error`, `ShellError`, `GlobError`). |
 | `type Args` | Either a custom struct or a simple type like `String` / `PathBuf`. |
@@ -60,64 +60,26 @@ fn description(&self) -> String {
 - Tools that take complex args (file path + old/new text) return an **object** schema with typed properties.
 - Tools that take a single string return a **string** schema.
 
-Example for object-based parameters (`edit.rs`):
+The Args struct is annotated with `#[derive(JsonSchema)]` so schemars can auto-generate the JSON Schema via `schemars::schema_for!()`:
+
 ```rust
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
+
+#[derive(Deserialize, JsonSchema)]
+pub struct ToolArgs {
+    pub field: String,
+}
+
 fn parameters(&self) -> Value {
-    json!({
-        "type": "object",
-        "properties": {
-            "file": { /* ... */ },
-            "old_text": { /* ... */ },
-            "new_text": { /* ... */ }
-        },
-        "required": ["file", "new_text"]
-    })
+    schemars::schema_for!(ToolArgs).to_value()
 }
 ```
 
-Example for simple string parameters (`shell.rs`):
-```rust
-fn parameters(&self) -> serde_json::Value {
-    serde_json::json!({
-        "type": "string",
-        "description": "The shell command to execute.",
-    })
-}
-```
+This produces a full JSON Schema object describing the tool's argument shape. The Args struct derives both `Deserialize` (for parsing incoming calls) and `JsonSchema` (for schema generation).
 
 #### `call()` — async execution:
 Receives deserialized args and calls the underlying filesystem/shell operation. The error type is propagated from the underlying library (`shadowai_filesystem`, `shadowai_shell`, etc.).
-
-### 6. Error Handling with thiserror
-
-When a tool needs to define its own error types (not just re-exporting errors from a dependency), use **`thiserror`** to derive clean, descriptive error enums:
-
-```rust
-use thiserror::Error;
-
-#[derive(Error, Debug)]
-pub enum ToolNameError {
-    #[error(transparent)]
-    UnderlyingError(#[from] underlying_lib::SomeError),
-}
-```
-
-Key patterns when using `thiserror`:
-
-- **`#[derive(Error, Debug)]`** — Always derive both.
-- **`#[error(...)]`** — Provide a human-readable message for each variant.
-- **`#[transparent]` + `#[from]`** — Forward the original error type so callers can match on it, while still providing a descriptive message via the outer enum. This is useful when wrapping errors from external libraries (e.g., `glob::GlobError`, `glob::PatternError`).
-
-## Error Handling Strategy Across Tools
-
-| Tool | Error Type | Origin |
-|------|-----------|--------|
-| `EditTool` | `EditFileError` | Re-exported from `shadowai_filesystem` (not thiserror-derived) |
-| `ReadTool` | `std::io::Error` | Standard library, no wrapper needed |
-| `ShellTool` | `ShellError` | Defined in `shadowai_shell` crate |
-| `GlobTool` | `GlobError` enum | **thiserror**-derived, wraps two glob errors with `#[transparent] #[from]` |
-
-When creating a new tool that needs its own error type, follow the `GlobTool` pattern: define an enum with `#[derive(Error, Debug)]`, use `#[error(...)]` for each variant, and use `#[transparent] #[from]` to forward any underlying errors you want to preserve.
 
 ### 5. Public Re-Export in `lib.rs`
 
@@ -138,6 +100,37 @@ mod glob;
 mod read;
 mod shell;
 ```
+
+### 6. Error Handling with thiserror
+
+When a tool needs to define its own error types (not just re-exporting errors from a dependency), use **thiserror** to derive clean, descriptive error enums:
+
+```rust
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum ToolNameError {
+    #[error(transparent)]
+    UnderlyingError(#[from] underlying_lib::SomeError),
+}
+```
+
+Key patterns when using `thiserror`:
+
+- **`#[derive(Error, Debug)`** — Always derive both.
+- **`#[error(...)]`** — Provide a human-readable message for each variant.
+- **`#[transparent]` + `#[from]`** — Forward the original error type so callers can match on it, while still providing a descriptive message via the outer enum. This is useful when wrapping errors from external libraries (e.g., `glob::GlobError`, `glob::PatternError`).
+
+## Error Handling Strategy Across Tools
+
+| Tool | Error Type | Origin |
+|------|-----------|--------|
+| EditTool | EditFileError | Re-exported from `shadowai_filesystem` (not thiserror-derived) |
+| ReadTool | std::io::Error | Standard library, no wrapper needed |
+| ShellTool | ShellError | Defined in `shadowai_shell` crate |
+| GlobTool | GlobError enum | **thiserror**-derived, wraps two glob errors with `#[transparent] #[from]` |
+
+When creating a new tool that needs its own error type, follow the `GlobTool` pattern: define an enum with `#[derive(Error, Debug)]`, use `#[error(...)]` for each variant, and use `#[transparent] #[from]` to forward any underlying errors you want to preserve.
 
 ## Domain Crate Architecture
 
