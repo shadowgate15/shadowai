@@ -4,5 +4,10 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+tokio = { workspace = true, features = ["fs"] }
+thiserror.workspace = true
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "fs"] }
 anyhow.workspace = true
-tokio = { workspace = true, features = ["macros", "fs"] }
+test_dir.workspace = true

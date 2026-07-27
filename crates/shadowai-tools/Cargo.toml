@@ -6,7 +6,8 @@ edition = "2024"
 [dependencies]
 rig.workspace = true
 glob.workspace = true
-tokio = { workspace = true, features = ["macros", "process"] }
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
 thiserror.workspace = true
+shadowai-filesystem.workspace = true
+shadowai-shell.workspace = true
