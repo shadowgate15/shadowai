@@ -30,6 +30,9 @@ shadowai-agent.workspace = true
 shadowai-filesystem.workspace = true
 shadowai-shell.workspace = true
 shadowai-tools.workspace = true
+tracing-subscriber = { version = "0.3.23", features = ["env-filter", "time", "local-time"] }
+directories = "6.0.0"
+tracing-appender = "0.2.5"
 
 [workspace.dependencies]
 shadowai-agent = { path = "crates/shadowai-agent" }
