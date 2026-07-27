@@ -1,9 +1,16 @@
 use std::path::PathBuf;
 
 use rig::tool::Tool;
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use serde_json::{Value, json};
+use serde_json::Value;
 use shadowai_filesystem::read_file;
+
+#[derive(Deserialize, JsonSchema)]
+pub struct ReadArgs {
+    /// The path to the file to read.
+    pub file: PathBuf,
+}
 
 #[derive(Deserialize, Serialize)]
 pub struct ReadTool;
@@ -16,7 +23,7 @@ impl Tool for ReadTool {
     const NAME: &'static str = "read";
 
     type Error = std::io::Error;
-    type Args = PathBuf;
+    type Args = ReadArgs;
     type Output = String;
 
     fn description(&self) -> String {
@@ -24,13 +31,10 @@ impl Tool for ReadTool {
     }
 
     fn parameters(&self) -> Value {
-        json!({
-            "type": "string",
-            "description": "The path to the file to read.",
-        })
+        schemars::schema_for!(ReadArgs).to_value()
     }
 
     async fn call(&self, args: Self::Args) -> Result<Self::Output, Self::Error> {
-        read_file(args).await
+        read_file(args.file).await
     }
 }

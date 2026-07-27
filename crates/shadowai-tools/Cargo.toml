@@ -11,3 +11,4 @@ serde_json.workspace = true
 thiserror.workspace = true
 shadowai-filesystem.workspace = true
 shadowai-shell.workspace = true
+schemars.workspace = true
