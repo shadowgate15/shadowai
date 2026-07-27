@@ -34,8 +34,13 @@ fn tool_list() -> String {
         shadowai_tools::ShellTool::NAME,
         shadowai_tools::ShellTool::DESCRIPTION
     );
+    let web_fetch_tool = format!(
+        "{} - {}",
+        shadowai_tools::WebFetchTool::NAME,
+        shadowai_tools::WebFetchTool::description()
+    );
 
-    [read_tool, glob_tool, edit_tool, shell_tool]
+    [read_tool, glob_tool, edit_tool, shell_tool, web_fetch_tool]
         .iter()
         .map(|tool| format!("  - {tool}"))
         .collect::<Vec<String>>()
@@ -301,6 +306,7 @@ pub async fn run_agent_loop(config: AgentConfig) -> Result<()> {
         .tool(shadowai_tools::GlobTool)
         .tool(shadowai_tools::EditTool)
         .tool(shadowai_tools::ShellTool)
+        .tool(shadowai_tools::WebFetchTool)
         .add_hook(shadowai_tools::RepairToolCall)
         .default_max_turns(config.default_max_turns)
         .temperature(config.temperature)

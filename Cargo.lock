@@ -1262,6 +1262,7 @@ version = "0.4.38"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ce2548391e9c1929c21bf6aa2680af86fe4c1b33e6cea9ac1cfeec0bd11218cf"
 dependencies = [
+ "brotli",
  "compression-core",
  "flate2",
  "memchr",
@@ -2552,6 +2553,28 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1e6853b52649d4ac5c0bd02320cddc5ba956bdb407c4b75a2c6b75bf51500f8c"
 dependencies = [
  "simd-adler32",
+]
+
+[[package]]
+name = "fetchkit"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b11487a5d22ca0dbb5b6aa7926a036e654789f98302791f7630040e54cfe8ca3"
+dependencies = [
+ "async-trait",
+ "bytes",
+ "futures",
+ "libc",
+ "percent-encoding",
+ "reqwest 0.13.4",
+ "schemars 1.2.2",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "tokio",
+ "tower",
+ "tracing",
+ "url",
 ]
 
 [[package]]
@@ -6413,6 +6436,7 @@ dependencies = [
 name = "shadowai-tools"
 version = "0.1.0"
 dependencies = [
+ "fetchkit",
  "glob",
  "rig",
  "schemars 1.2.2",

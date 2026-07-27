@@ -33,6 +33,7 @@ shadowai-shell = { path = "crates/shadowai-shell" }
 shadowai-tools = { path = "crates/shadowai-tools" }
 
 anyhow = "1.0.104"
+fetchkit = "0.5.0"
 futures = "0.3.33"
 glob = "0.3.4"
 rig = "0.40.0"
