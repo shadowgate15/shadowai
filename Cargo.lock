@@ -6366,11 +6366,11 @@ dependencies = [
 name = "shadowai-tools"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "glob",
  "rig",
  "serde",
  "serde_json",
+ "thiserror",
  "tokio",
 ]
 
