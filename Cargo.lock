@@ -6359,7 +6359,8 @@ dependencies = [
 name = "shadowai-shell"
 version = "0.1.0"
 dependencies = [
- "anyhow",
+ "thiserror",
+ "tokio",
 ]
 
 [[package]]
@@ -6371,8 +6372,8 @@ dependencies = [
  "serde",
  "serde_json",
  "shadowai-filesystem",
+ "shadowai-shell",
  "thiserror",
- "tokio",
 ]
 
 [[package]]
