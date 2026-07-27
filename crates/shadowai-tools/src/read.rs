@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use rig::tool::Tool;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
-use tokio::io::AsyncReadExt;
+use shadowai_filesystem::read_file;
 
 #[derive(Deserialize, Serialize)]
 pub struct ReadTool;
@@ -15,7 +15,7 @@ impl ReadTool {
 impl Tool for ReadTool {
     const NAME: &'static str = "read";
 
-    type Error = tokio::io::Error;
+    type Error = std::io::Error;
     type Args = PathBuf;
     type Output = String;
 
@@ -31,9 +31,6 @@ impl Tool for ReadTool {
     }
 
     async fn call(&self, args: Self::Args) -> Result<Self::Output, Self::Error> {
-        let mut file = tokio::fs::File::open(&args).await?;
-        let mut contents = String::new();
-        file.read_to_string(&mut contents).await?;
-        Ok(contents)
+        read_file(args).await
     }
 }
