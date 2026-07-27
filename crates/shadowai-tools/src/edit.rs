@@ -1,14 +1,18 @@
 use std::path::PathBuf;
 
 use rig::tool::Tool;
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use serde_json::{Value, json};
+use serde_json::Value;
 use shadowai_filesystem::{EditFileError, edit_file};
 
-#[derive(Deserialize)]
+#[derive(Deserialize, JsonSchema)]
 pub struct EditArgs {
+    /// The path to the file to edit.
     pub file: PathBuf,
+    /// The text to replace in the file. Required if the file already exists.
     pub old_text: Option<String>,
+    /// The new text to write to the file.
     pub new_text: String,
 }
 
@@ -31,24 +35,7 @@ impl Tool for EditTool {
     }
 
     fn parameters(&self) -> Value {
-        json!({
-            "type": "object",
-            "properties": {
-                "file": {
-                    "type": "string",
-                    "description": "The path to the file to edit."
-                },
-                "old_text": {
-                    "type": "string",
-                    "description": "The text to replace in the file. Required if the file already exists."
-                },
-                "new_text": {
-                    "type": "string",
-                    "description": "The new text to write to the file."
-                }
-            },
-            "required": ["file", "new_text"]
-        })
+        schemars::schema_for!(EditArgs).to_value()
     }
 
     async fn call(&self, args: Self::Args) -> Result<Self::Output, Self::Error> {

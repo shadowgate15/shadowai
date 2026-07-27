@@ -1,7 +1,14 @@
 use rig::tool::Tool;
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use serde_json::{Value, json};
+use serde_json::Value;
 use thiserror::Error;
+
+#[derive(Deserialize, JsonSchema)]
+pub struct GlobArgs {
+    /// The glob pattern to match files against.
+    pub pattern: String,
+}
 
 #[derive(Error, Debug)]
 pub enum GlobError {
@@ -23,7 +30,7 @@ impl Tool for GlobTool {
     const NAME: &'static str = "glob";
 
     type Error = GlobError;
-    type Args = String;
+    type Args = GlobArgs;
     type Output = Vec<String>;
 
     fn description(&self) -> String {
@@ -31,15 +38,12 @@ impl Tool for GlobTool {
     }
 
     fn parameters(&self) -> Value {
-        json!({
-            "type": "string",
-            "description": "The glob pattern to match files against.",
-        })
+        schemars::schema_for!(GlobArgs).to_value()
     }
 
     async fn call(&self, args: Self::Args) -> Result<Self::Output, Self::Error> {
         let mut results = Vec::new();
-        for entry in glob::glob(&args)? {
+        for entry in glob::glob(&args.pattern)? {
             let path = entry?;
             if path.is_file() {
                 results.push(path.to_string_lossy().into_owned());

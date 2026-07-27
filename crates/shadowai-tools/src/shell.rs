@@ -1,6 +1,13 @@
 use rig::tool::Tool;
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use shadowai_shell::{ShellError, execute};
+
+#[derive(Deserialize, JsonSchema)]
+pub struct ShellArgs {
+    /// The shell command to execute.
+    pub command: String,
+}
 
 #[derive(Deserialize, Serialize)]
 pub struct ShellTool;
@@ -13,7 +20,7 @@ impl Tool for ShellTool {
     const NAME: &'static str = "shell";
 
     type Error = ShellError;
-    type Args = String;
+    type Args = ShellArgs;
     type Output = String;
 
     fn description(&self) -> String {
@@ -21,13 +28,10 @@ impl Tool for ShellTool {
     }
 
     fn parameters(&self) -> serde_json::Value {
-        serde_json::json!({
-            "type": "string",
-            "description": "The shell command to execute.",
-        })
+        schemars::schema_for!(ShellArgs).to_value()
     }
 
     async fn call(&self, args: Self::Args) -> Result<Self::Output, Self::Error> {
-        execute(&args).await
+        execute(&args.command).await
     }
 }

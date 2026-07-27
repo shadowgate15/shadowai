@@ -6415,6 +6415,7 @@ version = "0.1.0"
 dependencies = [
  "glob",
  "rig",
+ "schemars 1.2.2",
  "serde",
  "serde_json",
  "shadowai-filesystem",
