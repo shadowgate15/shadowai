@@ -41,9 +41,7 @@ impl Tool for WebFetchTool {
     }
 
     async fn call(&self, args: Self::Args) -> Result<Self::Output, Self::Error> {
-        let req = FetchRequest::new(&args.url)
-            .as_markdown()
-            .content_focus("agent");
+        let req = FetchRequest::new(&args.url).as_markdown();
         let response = fetch(req).await?;
 
         Ok(response.content.unwrap_or_default())
