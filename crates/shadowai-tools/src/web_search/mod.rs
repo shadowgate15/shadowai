@@ -50,6 +50,11 @@ impl ShadowWebSearch {
     async fn execute(&self, args: WebSearchArgs) -> Result<String, WebSearchError> {
         let query = &args.query;
 
+        // Reject empty / malformed queries before touching cache or engines.
+        if !crate::web_search::args::validate_query(query) {
+            return Err(WebSearchError::EmptyResults { query: args.query });
+        }
+
         // Check cache first — if we have a fresh result for this query, return it directly.
         if let Some(cached) = crate::web_search::cache::check(query) {
             return Ok(cached);
