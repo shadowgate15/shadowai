@@ -8,6 +8,7 @@ Each section lists what to investigate and why it matters for the design doc.
 ## 1. Existing Tool Patterns in shadowai-tools
 
 **Prompt:** Study `crates/shadowai-tools/src/web_fetch.rs`, `read.rs`, `edit.rs`, `shell.rs`, and `glob.rs` to document:
+
 - The `Tool` trait signature (NAME, Args, Output types)
 - How errors are declared (`type Error = _`)
 - How parameters are exposed via `parameters()` → `Value`
@@ -15,11 +16,48 @@ Each section lists what to investigate and why it matters for the design doc.
 
 **Why:** The new websearch tool should follow the same conventions so it integrates cleanly with the existing toolkit.
 
+### 1. Tool trait signature
+
+All tools implement `rig::tool::Tool` with this structure:
+
+```rust
+impl Tool for <ToolName> {
+    const NAME: &'static str = "tool_name";
+    type Error = <CustomError>;     // per-tool error enum
+    type Args = <ArgsStruct>;       // struct with doc-commented fields
+    type Output = String;           // or Vec<String> (glob)
+
+    fn description(&self) -> String { ... }
+    fn parameters(&self) -> Value { schemars::schema_for!(Args).to_value() }
+    async fn call(&self, args: Self::Args) -> Result<Self::Output, Self::Error> { ... }
+}
+```
+
+### 2. Error declarations
+
+Each tool defines its own `#[derive(Error, Debug)]` enum using `thiserror`:
+
+- **shell.rs**: `ShellError` with variants (`CommandFailed`, `IOError`, etc.)
+- **edit.rs**: wraps externally-defined `EditFileError` from `shadowai_filesystem`
+- **web_fetch.rs**: wraps `FetchError` from `fetchkit`
+- **read.rs**: raw `std::io::Error` (only exception to the pattern)
+
+### 3. Parameters via `parameters()` → `Value`
+
+All tools use `schemars::schema_for!(Args).to_value()`. The `Args` struct derives `Deserialize, JsonSchema`, and each field has a doc comment explaining it — this is what populates the tool's JSON schema for the agent.
+
+### 4. Shared utilities
+
+- Tools derive `Deserialize, Serialize` (except read which uses only `JsonSchema`)
+- Description is static: either a `pub const DESCRIPTION: &'static str = "..."` or returned via `description()` method
+- All tools follow the same async call pattern with error propagation
+
 ---
 
 ## 2. Search Engine API Options
 
 **Prompt:** Research and compare these search APIs for LLM-agent integration:
+
 - **Google Custom Search JSON API** — auth, rate limits, result schema
 - **Bing Web Search / Edge** — auth, rate limits, result schema
 - **DuckDuckGo Instant Answer API** (unauthenticated) — schema, reliability
@@ -34,6 +72,7 @@ For each: document the request/response shape, free tier limits, and authenticat
 ## 3. Parameter Schema Design
 
 **Prompt:** Define candidate parameter schemas for `web_search`:
+
 - `query` — required string
 - `num_results` / `max_results` — optional integer, default?
 - `search_type` — general vs. news vs. images? (pick scope)
@@ -48,6 +87,7 @@ Produce a concrete JSON schema proposal and compare against how web_fetch handle
 ## 4. Result Normalization Strategy
 
 **Prompt:** Research:
+
 - What fields should every result contain regardless of source? (title, url, snippet, date)
 - How to handle engines that return different field names or types?
 - Should we expose raw results alongside normalized ones?
@@ -61,6 +101,7 @@ Propose a `WebSearchResult` struct and a normalization pipeline.
 ## 5. Caching & Deduplication
 
 **Prompt:** Research:
+
 - Should websearch cache queries? If so, what TTL makes sense for search results?
 - How to detect and deduplicate results across multiple engines (same domain, similar snippet)?
 - What storage primitive fits (in-memory map vs. file-backed cache)?
@@ -72,6 +113,7 @@ Propose a `WebSearchResult` struct and a normalization pipeline.
 ## 6. Error Handling & Failure Modes
 
 **Prompt:** Study `FetchError` from fetchkit used in web_fetch, then research:
+
 - Network timeout handling — should it be retryable? With what backoff?
 - Rate-limit responses (HTTP 429) — how to surface them to the agent?
 - Empty results — is that a hard error or a soft one?
@@ -86,6 +128,7 @@ Propose an `Error` type for websearch and retry strategy.
 ## 7. Async & Parallel Execution
 
 **Prompt:** Research:
+
 - Should we fire all available engines concurrently and merge results, or pick one engine per call?
 - How to handle async timeouts per-engine without blocking others?
 - What does `tokio` concurrency look like here (tasks, select, etc.)?
@@ -97,6 +140,7 @@ Propose an `Error` type for websearch and retry strategy.
 ## 8. Tool Description & Prompt Engineering
 
 **Prompt:** Draft candidate descriptions for the tool:
+
 - Short description shown in the agent's tool list (1–2 sentences)
 - Long-form guidance on when to use websearch vs. web_fetch
 - Examples of good queries vs. bad ones
@@ -110,6 +154,7 @@ Also research how other agents describe their search tools and what language wor
 ## 9. Testing Strategy
 
 **Prompt:** Research:
+
 - How to mock external HTTP calls in tests (tokio test, mockito, etc.)?
 - Unit vs. integration split for a tool that depends on network I/O?
 - What fixtures do we need (fake search responses)?
@@ -121,6 +166,7 @@ Also research how other agents describe their search tools and what language wor
 ## 10. Open Questions / Decisions Needed
 
 **Prompt:** List every design decision that blocks implementation:
+
 - Which engine is primary vs. fallback?
 - Single-engine-per-call vs. multi-engine parallel?
 - Caching: yes/no, and if yes, what TTL?
@@ -128,3 +174,4 @@ Also research how other agents describe their search tools and what language wor
 - Any auth model (API key env var vs. built-in)?
 
 **Why:** Future sessions can resolve these individually; the doc stays actionable.
+
