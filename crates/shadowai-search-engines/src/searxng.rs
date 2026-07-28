@@ -2,7 +2,7 @@ use reqwest::Client;
 use serde::Deserialize;
 use std::time::Duration;
 
-use crate::WebSearchResult;
+use crate::{WebSearchResult, normalization::{strip_html, unix_to_iso8601}};
 
 const SEARXNG_INSTANCE_URL: &str = "https://searx.be";
 const MAX_RETRIES: u32 = 3;
@@ -128,21 +128,17 @@ impl SearxngEngine {
             // Strip any HTML from content (defensive normalization).
             let snippet = strip_html(&item.content);
 
-            let date = item.timestamp.map(|ts| format!("{}-01-01T00:00:00Z", ts));
+            let date = item.timestamp.map(|ts| unix_to_iso8601(ts));
 
             web_results.push(WebSearchResult {
                 title: item.title.clone(), // title stays as-is
                 url: item.url.clone(),    // URL stays as-is
                 snippet,                  // content → snippet
                 date,                     // timestamp → ISO-8601 date
+                relevance_score: 0.5,     // Default score for MVP; engines can refine later
             });
         }
 
         Ok(web_results)
     }
-}
-
-/// Strip HTML tags from a string (defensive normalization).
-fn strip_html(html: &str) -> String {
-    html.replace('<', "").replace('>', "")
 }

@@ -2,7 +2,7 @@ use reqwest::Client;
 use serde::Deserialize;
 use std::time::Duration;
 
-use crate::WebSearchResult;
+use crate::{WebSearchResult, normalization::strip_html};
 
 const DDG_API_URL: &str = "https://api.duckduckgo.com/";
 const MAX_RETRIES: u32 = 3;
@@ -136,15 +136,11 @@ impl DuckDuckGoEngine {
                 url: item.url.clone(),       // URL stays as-is
                 snippet,                     // body → snippet
                 date: None,                  // DDG doesn't expose freshness metadata
+                relevance_score: 0.5,        // Default score for MVP; engines can refine later
             });
         }
 
         Ok(web_results)
     }
-}
-
-/// Strip HTML tags from a string (defensive normalization).
-fn strip_html(html: &str) -> String {
-    html.replace('<', "").replace('>', "")
 }
 
