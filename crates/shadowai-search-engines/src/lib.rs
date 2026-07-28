@@ -15,3 +15,4 @@ pub struct WebSearchResult {
 }
 
 pub mod duckduckgo;
+pub mod searxng;
