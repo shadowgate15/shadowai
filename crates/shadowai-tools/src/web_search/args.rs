@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 use schemars::JsonSchema;
-use serde_json::Value;
 
 #[derive(Deserialize, JsonSchema)]
 pub struct WebSearchArgs {

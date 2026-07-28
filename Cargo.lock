@@ -6500,8 +6500,10 @@ dependencies = [
  "serde",
  "serde_json",
  "shadowai-filesystem",
+ "shadowai-search-engines",
  "shadowai-shell",
  "thiserror",
+ "tokio",
 ]
 
 [[package]]
