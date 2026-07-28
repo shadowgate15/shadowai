@@ -13,3 +13,5 @@ pub struct WebSearchResult {
     /// When available — ISO-8601 timestamp or None if the engine doesn't expose freshness metadata.
     pub date: Option<String>,
 }
+
+pub mod duckduckgo;
