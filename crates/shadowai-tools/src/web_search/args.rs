@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, JsonSchema)]
 pub struct WebSearchArgs {
@@ -23,19 +23,16 @@ pub struct WebSearchArgs {
     pub region: String,
 }
 
-fn default_max_results() -> usize { 10 }
+fn default_max_results() -> usize {
+    10
+}
 
-#[derive(Deserialize, JsonSchema, Serialize)]
+#[derive(Default, Deserialize, JsonSchema, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum WebSearchType {
+    #[default]
     Web,
     News,
     Images,
     Videos,
-}
-
-impl Default for WebSearchType {
-    fn default() -> Self {
-        Self::Web
-    }
 }

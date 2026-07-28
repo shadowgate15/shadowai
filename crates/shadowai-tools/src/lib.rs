@@ -10,7 +10,7 @@ pub use glob::GlobTool;
 pub use read::ReadTool;
 pub use shell::ShellTool;
 pub use web_fetch::WebFetchTool;
-pub use web_search::{ShadowWebSearch, WebSearchArgs};
+pub use web_search::ShadowWebSearch;
 
 /// Repair hook that handles invalid tool calls.
 pub struct RepairToolCall;
