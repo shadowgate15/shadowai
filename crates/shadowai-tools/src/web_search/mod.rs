@@ -1,4 +1,5 @@
 pub mod args;
+pub mod cache;
 pub mod error;
 
 use shadowai_search_engines::WebSearchResult;
@@ -49,6 +50,11 @@ impl ShadowWebSearch {
     async fn execute(&self, args: WebSearchArgs) -> Result<String, WebSearchError> {
         let query = &args.query;
 
+        // Check cache first — if we have a fresh result for this query, return it directly.
+        if let Some(cached) = crate::web_search::cache::check(query) {
+            return Ok(cached);
+        }
+
         // Fire both engines in parallel with per-engine timeout (5s each).
         let (ddg_result, searxng_result) =
             tokio::join!(self.run_duckduckgo(query), self.run_searxng(query));
@@ -67,6 +73,9 @@ impl ShadowWebSearch {
         if merged.is_empty() {
             return Err(WebSearchError::EmptyResults { query: args.query });
         }
+
+        // Store the successful result in cache for future lookups.
+        crate::web_search::cache::store(query.as_str(), merged.clone());
 
         Ok(merged)
     }
