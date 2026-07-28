@@ -20,8 +20,8 @@ impl<M: rig::prelude::CompletionModel> rig::agent::AgentHook<M> for RepairToolCa
         event: rig::agent::StepEvent<'_, M>,
     ) -> rig::agent::Flow {
         match event {
-            rig::agent::StepEvent::InvalidToolCall(ctx) if ctx.tool_name == "write_file" => {
-                rig::agent::Flow::repair("edit_file")
+            rig::agent::StepEvent::InvalidToolCall(ctx) if ctx.tool_name == "write" => {
+                rig::agent::Flow::repair("edit")
             }
             rig::agent::StepEvent::InvalidToolCall(ctx) => rig::agent::Flow::retry(format!(
                 "Use one of these tools: {:?}",
