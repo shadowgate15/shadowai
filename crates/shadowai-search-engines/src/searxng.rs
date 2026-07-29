@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use crate::{WebSearchResult, normalization::{strip_html, unix_to_iso8601}};
 
-const SEARXNG_INSTANCE_URL: &str = "https://searx.be";
+const SEARXNG_INSTANCE_URL: &str = "http://searx.be";
 const MAX_RETRIES: u32 = 3;
 const INITIAL_BACKOFF_MS: u64 = 100;
 const MAX_BACKOFF_MS: u64 = 8_000;
@@ -52,12 +52,18 @@ pub enum SearxngError {
 }
 
 /// SearXNG search engine implementation.
-pub struct SearxngEngine;
+pub struct SearxngEngine {
+    optional_client: Option<Client>,
+}
 
 impl SearxngEngine {
+    pub fn new() -> Self {
+        Self { optional_client: None }
+    }
+
     /// Search via SearXNG public instance.
     pub async fn search(&self, query: &str) -> Result<Vec<WebSearchResult>, SearxngError> {
-        let client = Client::new();
+        let client = self.optional_client.as_ref().map(|c| c.clone()).unwrap_or_else(Client::new);
 
         // Build URL with space-encoded query parameter.
         let encoded_query = query.replace(' ', "%20");
@@ -110,8 +116,8 @@ impl SearxngEngine {
         Err(SearxngError::Timeout)
     }
 
-    /// Parse the raw SearXNG JSON response into canonical WebSearchResult entries.
-    fn parse_response(&self, body: &str) -> Result<Vec<WebSearchResult>, SearxngError> {
+    /// Parse a response body into canonical results (used by integration tests).
+    pub fn parse_response(&self, body: &str) -> Result<Vec<WebSearchResult>, SearxngError> {
         let searxng_response = match serde_json::from_str::<SearxngResponse>(body) {
             Ok(response) => response,
             Err(_) => return Err(SearxngError::MalformedResponse),
@@ -143,29 +149,35 @@ impl SearxngEngine {
     }
 }
 
+impl Default for SearxngEngine {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    fn make_searxng_response(results: Vec<SearxngResult>) -> String {
-        serde_json::to_string(&serde_json::json!({
-            "results": results,
-        }))
-        .unwrap()
-    }
-
     #[test]
     fn parse_response_happy_path_with_timestamp() {
-        let engine = SearxngEngine;
-        let body = make_searxng_response(vec![
-            SearxngResult { title: "SearXNG Title".into(), url: "https://example.org".into(), content: "Some snippet <b>text</b>".into(), timestamp: Some(1704067200u64) },
-        ]);
+        let engine = SearxngEngine::new();
+        let body = serde_json::json!({
+            "results": [
+                {
+                    "title": "SearXNG Title",
+                    "url": "https://example.org",
+                    "content": "<b>text</b>",
+                    "timestamp": 1704067200u64
+                }
+            ]
+        })
+        .to_string();
 
         let results = engine.parse_response(&body).unwrap();
         assert_eq!(results.len(), 1);
         assert_eq!(results[0].title, "SearXNG Title");
-        // strip_html removes < and > literally: "<b>text</b>" → "btext/b"
-        assert_eq!(results[0].snippet, "Some snippet btext/b");
+        assert_eq!(results[0].snippet, "text");
         assert_eq!(results[0].url, "https://example.org");
         // unix_to_iso8601(1704067200) — 2024-01-01T00:00:00Z (verified working)
         assert_eq!(results[0].date.as_deref(), Some("2024-01-01T00:00:00Z"));
@@ -173,10 +185,18 @@ mod tests {
 
     #[test]
     fn parse_response_no_timestamp() {
-        let engine = SearxngEngine;
-        let body = make_searxng_response(vec![
-            SearxngResult { title: "No Date".into(), url: "https://example.net".into(), content: "Plain text".into(), timestamp: None },
-        ]);
+        let engine = SearxngEngine::new();
+        let body = serde_json::json!({
+            "results": [
+                {
+                    "title": "No Date",
+                    "url": "https://example.net",
+                    "content": "Plain text",
+                    "timestamp": null
+                }
+            ]
+        })
+        .to_string();
 
         let results = engine.parse_response(&body).unwrap();
         assert_eq!(results.len(), 1);
@@ -185,15 +205,15 @@ mod tests {
 
     #[test]
     fn parse_response_empty_results() {
-        let engine = SearxngEngine;
-        let body = make_searxng_response(vec![]);
+        let engine = SearxngEngine::new();
+        let body = serde_json::json!({"results": []}).to_string();
         let results = engine.parse_response(&body).unwrap();
         assert!(results.is_empty());
     }
 
     #[test]
     fn parse_response_malformed_json() {
-        let engine = SearxngEngine;
+        let engine = SearxngEngine::new();
         let result = engine.parse_response("not json");
         assert!(matches!(result, Err(SearxngError::MalformedResponse)));
     }

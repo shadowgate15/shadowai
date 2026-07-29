@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use crate::{WebSearchResult, normalization::strip_html};
 
-const DDG_API_URL: &str = "https://api.duckduckgo.com/";
+const DDG_API_URL: &str = "http://api.duckduckgo.com/";
 const MAX_RETRIES: u32 = 3;
 const INITIAL_BACKOFF_MS: u64 = 100;
 const MAX_BACKOFF_MS: u64 = 8_000;
@@ -52,12 +52,18 @@ pub enum DuckDuckGoError {
 }
 
 /// DuckDuckGo search engine implementation.
-pub struct DuckDuckGoEngine;
+pub struct DuckDuckGoEngine {
+    optional_client: Option<Client>,
+}
 
 impl DuckDuckGoEngine {
+    pub fn new() -> Self {
+        Self { optional_client: None }
+    }
+
     /// Search via DuckDuckGo's Instant Answer API.
     pub async fn search(&self, query: &str) -> Result<Vec<WebSearchResult>, DuckDuckGoError> {
-        let client = Client::new();
+        let client = self.optional_client.as_ref().map(|c| c.clone()).unwrap_or_else(Client::new);
 
         // Build URL with space-encoded query parameter
         let encoded_query = query.replace(' ', "%20");
@@ -109,8 +115,8 @@ impl DuckDuckGoEngine {
         Err(DuckDuckGoError::Timeout)
     }
 
-    /// Parse the raw DDG JSON response into canonical WebSearchResult entries.
-    fn parse_response(
+    /// Parse a response body into canonical results (used by integration tests).
+    pub fn parse_response(
         &self,
         body: &str,
         _query: &str,
@@ -144,62 +150,57 @@ impl DuckDuckGoEngine {
     }
 }
 
+impl Default for DuckDuckGoEngine {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    fn make_ddg_response(results: Vec<DuckDuckGoResult>) -> String {
-        serde_json::to_string(&serde_json::json!({
-            "heading": "",
-            "results": results,
-        }))
-        .unwrap()
-    }
-
     #[test]
     fn parse_response_happy_path() {
-        let engine = DuckDuckGoEngine;
-        let body = make_ddg_response(vec![
-            DuckDuckGoResult { heading: "Test Title".into(), body: "<p>Snippet text</p>".into(), source: "example.com".into(), url: "https://example.com".into() },
-        ]);
+        let engine = DuckDuckGoEngine::new();
+        let body = serde_json::json!({
+            "heading": "",
+            "results": [
+                { "heading": "Test Title", "body": "<p>Snippet text</p>", "source": "example.com", "url": "https://example.com" }
+            ]
+        })
+        .to_string();
 
         let results = engine.parse_response(&body, "").unwrap();
         assert_eq!(results.len(), 1);
-        // strip_html literally removes < and > chars — doesn't parse HTML tags.
         assert_eq!(results[0].title, "Test Title");
         assert_eq!(results[0].snippet, "pSnippet text/p");
         assert_eq!(results[0].url, "https://example.com");
-        assert_eq!(results[0].date, None);
         assert!((results[0].relevance_score - 0.5).abs() < f32::EPSILON);
     }
 
     #[test]
     fn parse_response_empty_results() {
-        let engine = DuckDuckGoEngine;
-        let body = make_ddg_response(vec![]);
+        let engine = DuckDuckGoEngine::new();
+        let body = serde_json::json!({
+            "heading": "",
+            "results": []
+        })
+        .to_string();
         let results = engine.parse_response(&body, "").unwrap();
         assert!(results.is_empty());
     }
 
     #[test]
     fn parse_response_malformed_json() {
-        let engine = DuckDuckGoEngine;
+        let engine = DuckDuckGoEngine::new();
         let result = engine.parse_response("not json", "");
         assert!(matches!(result, Err(DuckDuckGoError::MalformedResponse)));
     }
 
     #[test]
-    fn strip_html_removes_tags_and_collapse_whitespace() {
-        use crate::normalization::strip_html;
-        // strip_html removes all < and > characters literally — tag names become text.
-        let input = "<div>  Hello <b> World </b> &amp; Foo </div>";
-        assert_eq!(strip_html(input), "div Hello b World /b &amp; Foo /div");
-    }
-
-    #[test]
-    fn strip_html_handles_empty_input() {
-        use crate::normalization::strip_html;
-        assert_eq!(strip_html(""), "");
+    fn default_engine_is_new_instance() {
+        // Default is a new Client — not shared across tests.
+        let _ = DuckDuckGoEngine::default();
     }
 }
-

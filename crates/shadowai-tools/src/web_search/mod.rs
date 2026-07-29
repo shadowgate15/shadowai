@@ -89,8 +89,8 @@ impl ShadowWebSearch {
 impl Default for ShadowWebSearch {
     fn default() -> Self {
         Self {
-            duckduckgo: shadowai_search_engines::duckduckgo::DuckDuckGoEngine,
-            searxng: shadowai_search_engines::searxng::SearxngEngine,
+            duckduckgo: shadowai_search_engines::duckduckgo::DuckDuckGoEngine::new(),
+            searxng: shadowai_search_engines::searxng::SearxngEngine::new(),
         }
     }
 }
