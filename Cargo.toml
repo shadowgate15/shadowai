@@ -26,6 +26,7 @@ tracing-subscriber = { version = "0.3.23", features = [
   "time",
   "local-time",
 ] }
+shadowai-agent-ui-ipc.workspace = true
 
 [workspace.dependencies]
 shadowai-agent = { path = "crates/shadowai-agent" }

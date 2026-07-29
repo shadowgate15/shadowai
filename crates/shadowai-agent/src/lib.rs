@@ -307,7 +307,10 @@ async fn get_user_input() -> Result<UserInput> {
 /// Run the agent conversation loop. This builds a rig `Agent` with the given config,
 /// registers tools from `shadowai-tools`, adds the repair hook, and drives the
 /// multi-turn streaming chat loop until the user types "exit".
-pub async fn run_agent_loop(config: AgentConfig) -> Result<()> {
+pub async fn run_agent_loop(
+    config: AgentConfig,
+    ui_sender: shadowai_agent_ui_ipc::AgentUIIpcSender,
+) -> Result<()> {
     let client = ollama::Client::new("not-needed")?;
 
     // Build the agent with the configured model + preamble.
@@ -321,6 +324,7 @@ pub async fn run_agent_loop(config: AgentConfig) -> Result<()> {
         .tool(shadowai_tools::WebFetchTool)
         .tool(shadowai_tools::WebSearch)
         .add_hook(shadowai_tools::RepairToolCall)
+        .add_hook(shadowai_agent_ui_ipc::AgentUIIpcHook::new(ui_sender))
         .default_max_turns(config.default_max_turns)
         .temperature(config.temperature)
         .additional_params(json!({

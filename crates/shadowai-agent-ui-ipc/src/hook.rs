@@ -1,8 +1,7 @@
 use rig::agent::{
-    self, AgentHook, CompletionCallAction, CompletionCallEvent, CompletionResponseEvent,
-    HookContext, ModelTurnAction, ModelTurnFinished, ObservationAction, StepEventKind,
-    StreamResponseFinish, TextDelta, ToolCall, ToolCallAction, ToolCallDelta, ToolResultAction,
-    ToolResultEvent,
+    AgentHook, CompletionCallAction, CompletionCallEvent, CompletionResponseEvent, HookContext,
+    ModelTurnAction, ModelTurnFinished, ObservationAction, StepEventKind, StreamResponseFinish,
+    TextDelta, ToolCall, ToolCallAction, ToolCallDelta, ToolResultAction, ToolResultEvent,
 };
 
 use crate::{AgentUIIpcMessage, AgentUIIpcSender};

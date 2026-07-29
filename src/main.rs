@@ -24,8 +24,14 @@ async fn main() -> Result<(), anyhow::Error> {
         .init();
 
     let config = AgentConfig::default();
+    let (ui_sender, mut ui_receiver) = shadowai_agent_ui_ipc::get_ipc_channel();
 
-    run_agent_loop(config).await?;
+    tokio::spawn(async move {
+        while let Some(message) = ui_receiver.recv().await {
+            println!("| {:?}", message);
+        }
+    });
+    run_agent_loop(config, ui_sender).await?;
 
     Ok(())
 }
