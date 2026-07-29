@@ -6361,6 +6361,7 @@ name = "shadowai-agent-ui-ipc"
 version = "0.1.0"
 dependencies = [
  "rig",
+ "serde",
  "tokio",
  "tracing",
 ]
