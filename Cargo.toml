@@ -4,7 +4,6 @@ members = [
   "crates/shadowai-filesystem",
   "crates/shadowai-shell",
   "crates/shadowai-tools",
-  "crates/shadowai-search-engines",
 ]
 
 [package]
@@ -46,6 +45,7 @@ thiserror = "2.0.19"
 tokio = "1.53.1"
 tokio-stream = "0.1.19"
 tokio-util = "0.7.19"
+websearch = "0.1.1"
 
 [workspace.dependencies.shadowai-search-engines]
 path = "crates/shadowai-search-engines"

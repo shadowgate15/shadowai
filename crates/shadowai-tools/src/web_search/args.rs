@@ -1,43 +1,37 @@
 use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 /// Maximum query length accepted by the tool. Queries longer than this are rejected before being sent to engines.
 const MAX_QUERY_LENGTH: usize = 500;
 
-#[derive(Deserialize, JsonSchema)]
+#[derive(Deserialize, Clone, JsonSchema)]
 pub struct WebSearchArgs {
     /// The search query.
     pub query: String,
 
     /// Maximum number of results to return.
     #[serde(default = "default_max_results")]
-    pub max_results: usize,
-
-    /// Search type (web, news, images, etc.).
-    #[serde(default)]
-    pub search_type: WebSearchType,
+    pub max_results: u32,
 
     /// Language code for the results (e.g., en, fr).
-    #[serde(default)]
+    #[serde(default = "default_language")]
     pub language: String,
 
     /// Region/locale to target.
-    #[serde(default)]
+    #[serde(default = "default_region")]
     pub region: String,
 }
 
-fn default_max_results() -> usize {
+fn default_max_results() -> u32 {
     10
 }
 
-#[derive(Default, Deserialize, JsonSchema, Serialize)]
-#[serde(rename_all = "lowercase")]
-pub enum WebSearchType {
-    #[default]
-    Web,
-    News,
-    Images,
-    Videos,
+fn default_language() -> String {
+    "en".to_string()
+}
+
+fn default_region() -> String {
+    "US".to_string()
 }
 
 /// Reject queries that are empty or too long. Returns `true` if the query is valid, `false` otherwise.

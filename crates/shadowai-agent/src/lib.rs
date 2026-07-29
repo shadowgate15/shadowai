@@ -41,8 +41,8 @@ fn tool_list() -> String {
     );
     let web_search_tool = format!(
         "{} - {}",
-        shadowai_tools::ShadowWebSearch::NAME,
-        shadowai_tools::ShadowWebSearch::DESCRIPTION,
+        shadowai_tools::WebSearch::NAME,
+        shadowai_tools::WebSearch::DESCRIPTION,
     );
 
     [
@@ -319,7 +319,7 @@ pub async fn run_agent_loop(config: AgentConfig) -> Result<()> {
         .tool(shadowai_tools::EditTool)
         .tool(shadowai_tools::ShellTool)
         .tool(shadowai_tools::WebFetchTool)
-        .tool(shadowai_tools::ShadowWebSearch::default())
+        .tool(shadowai_tools::WebSearch)
         .add_hook(shadowai_tools::RepairToolCall)
         .default_max_turns(config.default_max_turns)
         .temperature(config.temperature)
