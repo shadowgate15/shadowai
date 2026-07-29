@@ -1,4 +1,5 @@
 use rig::tool::Tool;
+use rig::tool::ToolContext;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -40,7 +41,11 @@ impl Tool for WebFetchTool {
         FETCH_TOOL.input_schema()
     }
 
-    async fn call(&self, args: Self::Args) -> Result<Self::Output, Self::Error> {
+    async fn call(
+        &self,
+        _ctx: &mut ToolContext,
+        args: Self::Args,
+    ) -> Result<Self::Output, Self::Error> {
         let req = FetchRequest::new(&args.url).as_markdown();
         let response = fetch(req).await?;
 

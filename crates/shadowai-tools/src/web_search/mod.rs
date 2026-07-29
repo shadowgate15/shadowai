@@ -2,6 +2,7 @@ pub mod args;
 pub mod cache;
 pub mod error;
 
+use rig::tool::ToolContext;
 use serde::{Deserialize, Serialize};
 
 /// Re-export the public types from sub-modules so they're accessible at the web_search module level.
@@ -82,7 +83,11 @@ impl rig::tool::Tool for WebSearch {
         schemars::schema_for!(WebSearchArgs).to_value()
     }
 
-    async fn call(&self, args: Self::Args) -> Result<Self::Output, Self::Error> {
+    async fn call(
+        &self,
+        _ctx: &mut ToolContext,
+        args: Self::Args,
+    ) -> Result<Self::Output, Self::Error> {
         self.execute(args).await
     }
 }

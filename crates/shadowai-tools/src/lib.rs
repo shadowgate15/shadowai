@@ -8,6 +8,7 @@ mod web_search;
 pub use edit::EditTool;
 pub use glob::GlobTool;
 pub use read::ReadTool;
+use rig::agent::{AgentHook, HookContext, InvalidToolCallAction, InvalidToolCallContext};
 pub use shell::ShellTool;
 pub use web_fetch::WebFetchTool;
 pub use web_search::WebSearch;
@@ -15,21 +16,17 @@ pub use web_search::WebSearch;
 /// Repair hook that handles invalid tool calls.
 pub struct RepairToolCall;
 
-impl<M: rig::prelude::CompletionModel> rig::agent::AgentHook<M> for RepairToolCall {
-    async fn on_event(
+impl AgentHook for RepairToolCall {
+    async fn on_invalid_tool_call(
         &self,
-        _ctx: &rig::agent::HookContext,
-        event: rig::agent::StepEvent<'_, M>,
-    ) -> rig::agent::Flow {
-        match event {
-            rig::agent::StepEvent::InvalidToolCall(ctx) if ctx.tool_name == "write" => {
-                rig::agent::Flow::repair("edit")
-            }
-            rig::agent::StepEvent::InvalidToolCall(ctx) => rig::agent::Flow::retry(format!(
-                "Use one of these tools: {:?}",
-                ctx.available_tools
-            )),
-            _ => rig::agent::Flow::cont(),
+        _ctx: &HookContext,
+        event: &InvalidToolCallContext,
+    ) -> Option<InvalidToolCallAction> {
+        match event.tool_name.as_str() {
+            "write" => Some(InvalidToolCallAction::Repair {
+                tool_name: "edit".to_string(),
+            }),
+            _ => None,
         }
     }
 }

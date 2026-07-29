@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use rig::tool::Tool;
+use rig::tool::{Tool, ToolContext};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -38,7 +38,11 @@ impl Tool for EditTool {
         schemars::schema_for!(EditArgs).to_value()
     }
 
-    async fn call(&self, args: Self::Args) -> Result<Self::Output, Self::Error> {
+    async fn call(
+        &self,
+        _ctx: &mut ToolContext,
+        args: Self::Args,
+    ) -> Result<Self::Output, Self::Error> {
         edit_file(args.file, args.old_text.as_deref(), &args.new_text).await
     }
 }

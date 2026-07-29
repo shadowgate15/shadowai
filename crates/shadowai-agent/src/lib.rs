@@ -1,7 +1,7 @@
 use std::env::{self, current_dir};
 use std::path::PathBuf;
 
-use rig::client::CompletionClient;
+use rig::client::AgentClientExt;
 use rig::prelude::StreamingChat;
 use rig::streaming::StreamedAssistantContent;
 use rig::tool::Tool;

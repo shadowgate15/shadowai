@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use rig::tool::Tool;
+use rig::tool::{Tool, ToolContext};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -34,7 +34,11 @@ impl Tool for ReadTool {
         schemars::schema_for!(ReadArgs).to_value()
     }
 
-    async fn call(&self, args: Self::Args) -> Result<Self::Output, Self::Error> {
+    async fn call(
+        &self,
+        _ctx: &mut ToolContext,
+        args: Self::Args,
+    ) -> Result<Self::Output, Self::Error> {
         read_file(args.file).await
     }
 }
