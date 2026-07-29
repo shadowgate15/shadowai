@@ -73,4 +73,3 @@ pub fn store(query: &str, response: String) {
         }
     }
 }
-

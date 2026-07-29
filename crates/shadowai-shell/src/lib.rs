@@ -28,7 +28,7 @@ pub async fn execute(command: &str) -> Result<String, ShellError> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{execute, ShellError};
+    use crate::{ShellError, execute};
 
     #[tokio::test]
     async fn test_execute_echo() {
