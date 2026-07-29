@@ -6357,6 +6357,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "shadowai-agent-ui-ipc"
+version = "0.1.0"
+dependencies = [
+ "rig",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "shadowai-filesystem"
 version = "0.1.0"
 dependencies = [

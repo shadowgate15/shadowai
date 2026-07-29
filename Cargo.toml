@@ -4,6 +4,7 @@ members = [
   "crates/shadowai-filesystem",
   "crates/shadowai-shell",
   "crates/shadowai-tools",
+  "crates/shadowai-agent-ui-ipc",
 ]
 
 [package]
@@ -31,6 +32,7 @@ shadowai-agent = { path = "crates/shadowai-agent" }
 shadowai-filesystem = { path = "crates/shadowai-filesystem" }
 shadowai-shell = { path = "crates/shadowai-shell" }
 shadowai-tools = { path = "crates/shadowai-tools" }
+shadowai-agent-ui-ipc = { path = "crates/shadowai-agent-ui-ipc" }
 
 anyhow = "1.0.104"
 fetchkit = "0.5.0"
@@ -45,7 +47,5 @@ thiserror = "2.0.19"
 tokio = "1.53.1"
 tokio-stream = "0.1.19"
 tokio-util = "0.7.19"
+tracing = "0.1.44"
 websearch = "0.1.1"
-
-[workspace.dependencies.shadowai-search-engines]
-path = "crates/shadowai-search-engines"
