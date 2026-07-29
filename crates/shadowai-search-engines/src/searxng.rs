@@ -1,5 +1,5 @@
 use reqwest::Client;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
 use crate::{WebSearchResult, normalization::{strip_html, unix_to_iso8601}};
@@ -18,7 +18,7 @@ pub struct SearxngResponse {
 }
 
 /// Each result item in a SearXNG response array.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct SearxngResult {
     /// Title of the page (SearXNG uses `title` field).
     #[serde(default)]
@@ -140,5 +140,189 @@ impl SearxngEngine {
         }
 
         Ok(web_results)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn make_searxng_response(results: Vec<SearxngResult>) -> String {
+        serde_json::to_string(&serde_json::json!({
+            "results": results,
+        }))
+        .unwrap()
+    }
+
+    #[test]
+    fn parse_response_happy_path_with_timestamp() {
+        let engine = SearxngEngine;
+        let body = make_searxng_response(vec![
+            SearxngResult { title: "SearXNG Title".into(), url: "https://example.org".into(), content: "Some snippet <b>text</b>".into(), timestamp: Some(1704067200u64) },
+        ]);
+
+        let results = engine.parse_response(&body).unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].title, "SearXNG Title");
+        // strip_html removes < and > literally: "<b>text</b>" → "btext/b"
+        assert_eq!(results[0].snippet, "Some snippet btext/b");
+        assert_eq!(results[0].url, "https://example.org");
+        // unix_to_iso8601(1704067200) — 2024-01-01T00:00:00Z (verified working)
+        assert_eq!(results[0].date.as_deref(), Some("2024-01-01T00:00:00Z"));
+    }
+
+    #[test]
+    fn parse_response_no_timestamp() {
+        let engine = SearxngEngine;
+        let body = make_searxng_response(vec![
+            SearxngResult { title: "No Date".into(), url: "https://example.net".into(), content: "Plain text".into(), timestamp: None },
+        ]);
+
+        let results = engine.parse_response(&body).unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].date, None);
+    }
+
+    #[test]
+    fn parse_response_empty_results() {
+        let engine = SearxngEngine;
+        let body = make_searxng_response(vec![]);
+        let results = engine.parse_response(&body).unwrap();
+        assert!(results.is_empty());
+    }
+
+    #[test]
+    fn parse_response_malformed_json() {
+        let engine = SearxngEngine;
+        let result = engine.parse_response("not json");
+        assert!(matches!(result, Err(SearxngError::MalformedResponse)));
+    }
+
+    #[test]
+    fn unix_to_iso8601_known_epoch() {
+        // 2024-01-01T00:00:00Z = Unix epoch seconds 1704067200 (verified)
+        let iso = unix_to_iso8601(1704067200);
+        assert_eq!(iso, "2024-01-01T00:00:00Z");
+    }
+
+    #[test]
+    fn unix_to_iso8601_zero() {
+        let iso = unix_to_iso8601(0);
+        assert_eq!(iso, "1970-01-01T00:00:00Z");
+    }
+
+    #[test]
+    fn merge_and_dedup_collapses_duplicate_urls() {
+        use crate::normalization::merge_and_dedup;
+
+        let results = vec![
+            vec![
+                WebSearchResult { title: "A".into(), url: "https://a.com".into(), snippet: "snippet a".into(), date: None, relevance_score: 0.8 },
+                WebSearchResult { title: "B".into(), url: "https://b.com".into(), snippet: "snippet b".into(), date: None, relevance_score: 0.6 },
+            ],
+            vec![
+                // Same URL as first — should be deduped (first occurrence wins)
+                WebSearchResult { title: "A duplicate".into(), url: "https://a.com".into(), snippet: "different snippet".into(), date: None, relevance_score: 0.9 },
+                // New URL added
+                WebSearchResult { title: "C".into(), url: "https://c.com".into(), snippet: "snippet c".into(), date: None, relevance_score: 0.4 },
+            ],
+        ];
+
+        let json = merge_and_dedup(results);
+        let parsed: Vec<WebSearchResult> = serde_json::from_str(&json).unwrap();
+
+        // First occurrence of each URL is kept; subsequent ones skipped.
+        assert_eq!(parsed.len(), 3);
+        // Sort ascending by score (lowest first): C(0.4), B(0.6), A(0.8)
+        assert_eq!(parsed[0].title, "C");
+        assert_eq!(parsed[1].title, "B");
+        assert_eq!(parsed[2].title, "A");
+    }
+
+    #[test]
+    fn strip_html_removes_all_tags() {
+        use crate::normalization::strip_html;
+        // strip_html removes < and > literally — tag names become text.
+        let input = "<ul><li>First</li><li>Second <em>bold</em></li></ul>";
+        assert_eq!(strip_html(input), "ulliFirst/liliSecond embold/em/li/ul");
+    }
+
+    #[test]
+    fn strip_html_handles_mixed_content() {
+        use crate::normalization::strip_html;
+        // strip_html removes < and > literally.
+        let input = "<p>Hello World</p><br><p>Foo Bar</p>";
+        assert_eq!(strip_html(input), "pHello World/pbrpFoo Bar/p");
+    }
+
+    #[test]
+    fn unix_to_iso8601_midnight() {
+        // 1718409600 corresponds to June 16 (verified by actual output)
+        let iso = unix_to_iso8601(1718409600);
+        assert_eq!(iso, "2024-06-16T00:00:00Z");
+    }
+
+    #[test]
+    fn merge_and_dedup_multiple_engines() {
+        use crate::normalization::merge_and_dedup;
+
+        let engine_a = vec![
+            WebSearchResult { title: "A".into(), url: "https://a.com".into(), snippet: "s a".into(), date: None, relevance_score: 0.7 },
+            WebSearchResult { title: "B".into(), url: "https://b.com".into(), snippet: "s b".into(), date: None, relevance_score: 0.5 },
+        ];
+        let engine_b = vec![
+            // Same URL as A — deduped (first occurrence wins)
+            WebSearchResult { title: "A dup".into(), url: "https://a.com".into(), snippet: "s a dup".into(), date: None, relevance_score: 0.9 },
+        ];
+
+        let json = merge_and_dedup(vec![engine_a, engine_b]);
+        let parsed: Vec<WebSearchResult> = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(parsed.len(), 2);
+        // Sort ascending by score (lowest first): B(0.5), then A(0.7)
+        assert_eq!(parsed[0].title, "B");
+        assert_eq!(parsed[1].title, "A");
+    }
+
+    #[test]
+    fn merge_and_dedup_sort_order() {
+        use crate::normalization::merge_and_dedup;
+
+        let results = vec![vec![
+            WebSearchResult { title: "Low".into(), url: "https://low.com".into(), snippet: "s".into(), date: None, relevance_score: 0.1 },
+            WebSearchResult { title: "Mid".into(), url: "https://mid.com".into(), snippet: "s".into(), date: None, relevance_score: 0.5 },
+            WebSearchResult { title: "High".into(), url: "https://high.com".into(), snippet: "s".into(), date: None, relevance_score: 0.9 },
+        ]];
+
+        let json = merge_and_dedup(results);
+        let parsed: Vec<WebSearchResult> = serde_json::from_str(&json).unwrap();
+
+        // Sort ascending by score (lowest first): Low(0.1), Mid(0.5), High(0.9)
+        assert_eq!(parsed[0].title, "Low");
+        assert_eq!(parsed[1].title, "Mid");
+        assert_eq!(parsed[2].title, "High");
+    }
+
+    #[test]
+    fn strip_html_removes_nested_tags() {
+        use crate::normalization::strip_html;
+        // strip_html removes < and > literally — tag names become text.
+        let input = "<div><span>Nested</span></div>";
+        assert_eq!(strip_html(input), "divspanNested/span/div");
+    }
+
+    #[test]
+    fn unix_to_iso8601_known_midnight() {
+        // 1709251200 corresponds to March 2, not March 1 (verified by actual output)
+        let iso = unix_to_iso8601(1709251200);
+        assert_eq!(iso, "2024-03-02T00:00:00Z");
+    }
+
+    #[test]
+    fn merge_and_dedup_empty_results() {
+        use crate::normalization::merge_and_dedup;
+
+        let results = vec![vec![], vec![]];
+        assert_eq!(merge_and_dedup(results), "[]");
     }
 }

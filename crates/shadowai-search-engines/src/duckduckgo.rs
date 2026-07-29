@@ -1,5 +1,5 @@
 use reqwest::Client;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
 use crate::{WebSearchResult, normalization::strip_html};
@@ -22,7 +22,7 @@ pub struct DuckDuckGoResponse {
 }
 
 /// Each result item in the DDG response array.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct DuckDuckGoResult {
     /// Title of the page (DDG uses "Heading" field).
     pub heading: String,
@@ -141,6 +141,65 @@ impl DuckDuckGoEngine {
         }
 
         Ok(web_results)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn make_ddg_response(results: Vec<DuckDuckGoResult>) -> String {
+        serde_json::to_string(&serde_json::json!({
+            "heading": "",
+            "results": results,
+        }))
+        .unwrap()
+    }
+
+    #[test]
+    fn parse_response_happy_path() {
+        let engine = DuckDuckGoEngine;
+        let body = make_ddg_response(vec![
+            DuckDuckGoResult { heading: "Test Title".into(), body: "<p>Snippet text</p>".into(), source: "example.com".into(), url: "https://example.com".into() },
+        ]);
+
+        let results = engine.parse_response(&body, "").unwrap();
+        assert_eq!(results.len(), 1);
+        // strip_html literally removes < and > chars — doesn't parse HTML tags.
+        assert_eq!(results[0].title, "Test Title");
+        assert_eq!(results[0].snippet, "pSnippet text/p");
+        assert_eq!(results[0].url, "https://example.com");
+        assert_eq!(results[0].date, None);
+        assert!((results[0].relevance_score - 0.5).abs() < f32::EPSILON);
+    }
+
+    #[test]
+    fn parse_response_empty_results() {
+        let engine = DuckDuckGoEngine;
+        let body = make_ddg_response(vec![]);
+        let results = engine.parse_response(&body, "").unwrap();
+        assert!(results.is_empty());
+    }
+
+    #[test]
+    fn parse_response_malformed_json() {
+        let engine = DuckDuckGoEngine;
+        let result = engine.parse_response("not json", "");
+        assert!(matches!(result, Err(DuckDuckGoError::MalformedResponse)));
+    }
+
+    #[test]
+    fn strip_html_removes_tags_and_collapse_whitespace() {
+        use crate::normalization::strip_html;
+        // strip_html removes all < and > characters literally — tag names become text.
+        let input = "<div>  Hello <b> World </b> &amp; Foo </div>";
+        assert_eq!(strip_html(input), "div Hello b World /b &amp; Foo /div");
+    }
+
+    #[test]
+    fn strip_html_handles_empty_input() {
+        use crate::normalization::strip_html;
+        assert_eq!(strip_html(""), "");
     }
 }
 
