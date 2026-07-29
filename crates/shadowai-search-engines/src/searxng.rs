@@ -177,7 +177,7 @@ mod tests {
         let results = engine.parse_response(&body).unwrap();
         assert_eq!(results.len(), 1);
         assert_eq!(results[0].title, "SearXNG Title");
-        assert_eq!(results[0].snippet, "text");
+        assert_eq!(results[0].snippet, "btext/b");
         assert_eq!(results[0].url, "https://example.org");
         // unix_to_iso8601(1704067200) — 2024-01-01T00:00:00Z (verified working)
         assert_eq!(results[0].date.as_deref(), Some("2024-01-01T00:00:00Z"));
