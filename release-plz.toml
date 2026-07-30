@@ -1,0 +1,12 @@
+[workspace]
+allow_dirty = false               # allow updating repositories with uncommitted changes
+dependencies_update = false       # update dependencies with `cargo update`
+git_release_enable = true         # disable GitHub/Gitea releases
+pr_branch_prefix = "release-plz-" # PR branch prefix
+pr_labels = ["release"]           # add the `release` label to the release Pull Request
+publish_allow_dirty = true        # add `--allow-dirty` to `cargo publish`
+publish_timeout = "10m"           # set a timeout for `cargo publish`
+publish = false
+
+[changelog]
+protect_breaking_commits = true # always include commits with breaking changes in the changelog
