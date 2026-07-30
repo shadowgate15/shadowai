@@ -11,3 +11,4 @@ tokio-util.workspace = true
 anyhow.workspace = true
 serde_json.workspace = true
 shadowai-tools.workspace = true
+shadowai-agent-ui-ipc = { workspace = true, features = ["hook"] }

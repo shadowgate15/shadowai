@@ -2,7 +2,7 @@ use std::env::{self, current_dir};
 use std::path::PathBuf;
 
 use rig::client::AgentClientExt;
-use rig::prelude::StreamingChat;
+use rig::prelude::{StreamingChat, StreamingPrompt};
 use rig::streaming::StreamedAssistantContent;
 use rig::tool::Tool;
 use rig::{agent::MultiTurnStreamItem, providers::ollama};
@@ -307,7 +307,11 @@ async fn get_user_input() -> Result<UserInput> {
 /// Run the agent conversation loop. This builds a rig `Agent` with the given config,
 /// registers tools from `shadowai-tools`, adds the repair hook, and drives the
 /// multi-turn streaming chat loop until the user types "exit".
-pub async fn run_agent_loop(config: AgentConfig) -> Result<()> {
+pub async fn run_agent_loop(
+    config: AgentConfig,
+    input: String,
+    ui_sender: shadowai_agent_ui_ipc::AgentUIIpcSender,
+) -> Result<()> {
     let client = ollama::Client::new("not-needed")?;
 
     // Build the agent with the configured model + preamble.
@@ -321,6 +325,7 @@ pub async fn run_agent_loop(config: AgentConfig) -> Result<()> {
         .tool(shadowai_tools::WebFetchTool)
         .tool(shadowai_tools::WebSearch)
         .add_hook(shadowai_tools::RepairToolCall)
+        .add_hook(shadowai_agent_ui_ipc::AgentUIIpcHook::new(ui_sender))
         .default_max_turns(config.default_max_turns)
         .temperature(config.temperature)
         .additional_params(json!({
@@ -333,81 +338,10 @@ pub async fn run_agent_loop(config: AgentConfig) -> Result<()> {
         }))
         .build();
 
-    println!(
-        "Welcome! Type your message and press Enter. (Multi-line input is supported by wrapping in \"\"\".)"
-    );
-    println!("Type 'exit' to exit.");
-    println!();
+    let mut stream = agent.stream_prompt(input).await;
 
-    let mut history = ConversationHistory::new();
-
-    while let UserInput::Input(input) = get_user_input().await? {
-        println!();
-        println!("{} response start {}", "=".repeat(10), "=".repeat(10));
-        println!();
-
-        let mut stream = agent.stream_chat(input, &history.messages).await;
-
-        while let Some(msg) = stream.next().await {
-            match msg {
-                Ok(MultiTurnStreamItem::FinalResponse(fin)) => {
-                    history.extend_from_slice(fin.messages().unwrap_or_default());
-
-                    println!();
-                    println!();
-                    let usage = fin.usage();
-                    println!(
-                        "{} response end ({}/{}) {}",
-                        "=".repeat(10),
-                        usage.input_tokens,
-                        usage.output_tokens,
-                        "=".repeat(10)
-                    );
-                    println!();
-
-                    break;
-                }
-                Ok(MultiTurnStreamItem::StreamAssistantItem(StreamedAssistantContent::Text(
-                    text,
-                ))) => {
-                    print!("{}", text);
-                }
-                Ok(MultiTurnStreamItem::StreamAssistantItem(
-                    StreamedAssistantContent::ToolCall {
-                        tool_call,
-                        internal_call_id,
-                    },
-                )) => {
-                    println!();
-                    println!(">>> {}({})", tool_call.function.name, internal_call_id);
-                    println!(
-                        "{}",
-                        serde_json::to_string_pretty(&tool_call.function.arguments)?
-                    );
-                    println!(">>>");
-                }
-                Ok(MultiTurnStreamItem::StreamAssistantItem(
-                    StreamedAssistantContent::Reasoning(reasoning),
-                )) => {
-                    println!();
-                    println!("=== {}", reasoning.id.unwrap_or_default());
-
-                    for reasoning in &reasoning.content {
-                        match reasoning {
-                            rig::message::ReasoningContent::Text { text, signature: _ } => {
-                                println!("{}", text)
-                            }
-                            rig::message::ReasoningContent::Summary(text) => println!("{}", text),
-                            _ => {}
-                        }
-                    }
-
-                    println!("===");
-                }
-                Ok(_other) => { /* Do something with this chunk */ }
-                Err(e) => return Err(e.into()),
-            }
-        }
+    while let Some(msg) = stream.next().await {
+        let _ = msg?;
     }
 
     Ok(())
