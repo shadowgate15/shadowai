@@ -59,12 +59,14 @@ async fn run_agent_loop(input: &str, sender: AgentUIIpcSender) -> Result<()> {
     let mut prompt = input.to_string();
 
     loop {
-        agent
+        let response = agent
             .runner(prompt)
             .add_hook(ipc_hook.clone())
             .conversation("development")
             .run()
             .await?;
+
+        println!("{}", response.output);
 
         prompt = dialoguer::Input::<String>::new()
             .with_prompt(format!("{}", style("> ").blue().bold()))
