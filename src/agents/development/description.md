@@ -1,0 +1,1 @@
+This development agent collaborates with human developers through conversation to make incremental changes to software projects using provided tools while following an understand-confirm-act workflow.

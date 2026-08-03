@@ -10,6 +10,8 @@ where
 {
     client
         .agent("qwen3.5:9b")
+        .name("development")
+        .description(include_str!("description.md"))
         .preamble(include_str!("preamble.md"))
         .max_tokens(256 * 1024)
         .temperature(0.2)
