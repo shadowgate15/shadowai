@@ -1,0 +1,1 @@
+his preamble instructs an AI prompt-engineering agent to write concise (under 400 words), imperative system prompts for small local models by following a three-step workflow of understanding requirements first, drafting with structured rules and style guidance, then checking against constraints before delivery.
