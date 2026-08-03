@@ -6,18 +6,18 @@ const MAX_QUERY_LENGTH: usize = 500;
 
 #[derive(Deserialize, Clone, JsonSchema)]
 pub struct WebSearchArgs {
-    /// The search query.
+    /// The search query. (e.g., `"machine learning basics"`)
     pub query: String,
 
-    /// Maximum number of results to return.
+    /// Maximum number of results to return. Defaults to 10 if not specified. (e.g., `25`)
     #[serde(default = "default_max_results")]
     pub max_results: u32,
 
-    /// Language code for the results (e.g., en, fr).
+    /// Language code for the results (e.g., en, fr). Default is `"en"`.
     #[serde(default = "default_language")]
     pub language: String,
 
-    /// Region/locale to target.
+    /// Region/locale to target. Default is `"US"`. (e.g., `"EU", "JP"`)
     #[serde(default = "default_region")]
     pub region: String,
 }

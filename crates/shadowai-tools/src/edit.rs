@@ -8,11 +8,11 @@ use shadowai_filesystem::{EditFileError, edit_file};
 
 #[derive(Deserialize, JsonSchema)]
 pub struct EditArgs {
-    /// The path to the file to edit.
+    /// The path to the file to edit. (e.g., `/path/to/file.txt`)
     pub file: PathBuf,
-    /// The text to replace in the file. Required if the file already exists.
+    /// The text to replace in the file. Required if the file already exists. (e.g., `"Hello world"`)
     pub old_text: Option<String>,
-    /// The new text to write to the file.
+    /// The new text to write to the file. (e.g., `"Goodbye world"`)
     pub new_text: String,
 }
 

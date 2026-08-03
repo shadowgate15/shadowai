@@ -5,7 +5,7 @@ use shadowai_shell::{ShellError, execute};
 
 #[derive(Deserialize, JsonSchema)]
 pub struct ShellArgs {
-    /// The shell command to execute.
+    /// The shell command to execute. (e.g., `"ls -la /tmp"`)
     pub command: String,
 }
 

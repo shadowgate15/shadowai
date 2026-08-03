@@ -8,7 +8,7 @@ use shadowai_filesystem::read_file;
 
 #[derive(Deserialize, JsonSchema)]
 pub struct ReadArgs {
-    /// The path to the file to read.
+    /// The path to the file to read. (e.g., `/path/to/file.txt`)
     pub file: PathBuf,
 }
 

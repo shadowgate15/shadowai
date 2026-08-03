@@ -15,7 +15,7 @@ pub enum GlobToolError {
 
 #[derive(Deserialize, JsonSchema)]
 pub struct GlobArgs {
-    /// The glob pattern to match files against.
+    /// The glob pattern to match files against. (e.g., `"*.rs"`, `"src/**/*"`)
     pub pattern: String,
 }
 

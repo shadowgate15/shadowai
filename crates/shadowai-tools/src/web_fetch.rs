@@ -12,7 +12,7 @@ static FETCH_TOOL: std::sync::LazyLock<fetchkit::Tool> =
 
 #[derive(Deserialize)]
 pub struct WebFetchArgs {
-    /// The URL to fetch.
+    /// The URL to fetch. (e.g., `"https://example.com/page.md"`)
     pub url: String,
 }
 
