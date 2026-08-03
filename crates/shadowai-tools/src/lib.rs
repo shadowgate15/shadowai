@@ -5,11 +5,11 @@ mod shell;
 mod web_fetch;
 mod web_search;
 
-pub use edit::EditTool;
-pub use glob::GlobTool;
-pub use read::ReadTool;
+pub use edit::EditFileTool;
+pub use glob::ListMatchingFilesTool;
+pub use read::ReadFileTool;
 use rig::agent::{AgentHook, HookContext, InvalidToolCallAction, InvalidToolCallContext};
-pub use shell::ShellTool;
+pub use shell::ExecuteShellCommandTool;
 pub use web_fetch::WebFetchTool;
 pub use web_search::WebSearch;
 
@@ -24,7 +24,7 @@ impl AgentHook for RepairToolCall {
     ) -> Option<InvalidToolCallAction> {
         match event.tool_name.as_str() {
             "write" => Some(InvalidToolCallAction::Repair {
-                tool_name: "edit".to_string(),
+                tool_name: "edit_file".to_string(),
             }),
             _ => None,
         }

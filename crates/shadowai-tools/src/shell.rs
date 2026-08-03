@@ -10,21 +10,21 @@ pub struct ShellArgs {
 }
 
 #[derive(Deserialize, Serialize)]
-pub struct ShellTool;
+pub struct ExecuteShellCommandTool;
 
-impl ShellTool {
+impl ExecuteShellCommandTool {
     pub const DESCRIPTION: &'static str = "Executes a shell command and returns its output.";
 }
 
-impl Tool for ShellTool {
-    const NAME: &'static str = "shell";
+impl Tool for ExecuteShellCommandTool {
+    const NAME: &'static str = "execute_shell_command";
 
     type Error = ShellError;
     type Args = ShellArgs;
     type Output = String;
 
     fn description(&self) -> String {
-        ShellTool::DESCRIPTION.to_string()
+        ExecuteShellCommandTool::DESCRIPTION.to_string()
     }
 
     fn parameters(&self) -> serde_json::Value {

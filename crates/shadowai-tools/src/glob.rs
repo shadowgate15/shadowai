@@ -20,22 +20,22 @@ pub struct GlobArgs {
 }
 
 #[derive(Serialize)]
-pub struct GlobTool;
+pub struct ListMatchingFilesTool;
 
-impl GlobTool {
+impl ListMatchingFilesTool {
     pub const DESCRIPTION: &'static str =
         "Lists files matching a glob pattern (e.g., *.rs, src/**/*). Respects .gitignore rules.";
 }
 
-impl Tool for GlobTool {
-    const NAME: &'static str = "glob";
+impl Tool for ListMatchingFilesTool {
+    const NAME: &'static str = "list_matching_files";
 
     type Error = GlobToolError;
     type Args = GlobArgs;
     type Output = Vec<String>;
 
     fn description(&self) -> String {
-        GlobTool::DESCRIPTION.to_string()
+        ListMatchingFilesTool::DESCRIPTION.to_string()
     }
 
     fn parameters(&self) -> Value {

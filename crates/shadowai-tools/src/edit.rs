@@ -17,21 +17,21 @@ pub struct EditArgs {
 }
 
 #[derive(Deserialize, Serialize)]
-pub struct EditTool;
+pub struct EditFileTool;
 
-impl EditTool {
+impl EditFileTool {
     pub const DESCRIPTION: &'static str = "Edits the contents of a file at the given path.";
 }
 
-impl Tool for EditTool {
-    const NAME: &'static str = "edit";
+impl Tool for EditFileTool {
+    const NAME: &'static str = "edit_file";
 
     type Error = EditFileError;
     type Args = EditArgs;
     type Output = String;
 
     fn description(&self) -> String {
-        EditTool::DESCRIPTION.to_string()
+        EditFileTool::DESCRIPTION.to_string()
     }
 
     fn parameters(&self) -> Value {

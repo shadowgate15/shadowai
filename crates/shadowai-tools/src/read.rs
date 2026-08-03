@@ -13,21 +13,21 @@ pub struct ReadArgs {
 }
 
 #[derive(Deserialize, Serialize)]
-pub struct ReadTool;
+pub struct ReadFileTool;
 
-impl ReadTool {
+impl ReadFileTool {
     pub const DESCRIPTION: &'static str = "Reads the contents of a file at the given path.";
 }
 
-impl Tool for ReadTool {
-    const NAME: &'static str = "read";
+impl Tool for ReadFileTool {
+    const NAME: &'static str = "read_file";
 
     type Error = std::io::Error;
     type Args = ReadArgs;
     type Output = String;
 
     fn description(&self) -> String {
-        ReadTool::DESCRIPTION.to_string()
+        ReadFileTool::DESCRIPTION.to_string()
     }
 
     fn parameters(&self) -> Value {
