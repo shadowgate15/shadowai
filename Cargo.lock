@@ -6359,6 +6359,8 @@ dependencies = [
  "anyhow",
  "dialoguer",
  "directories",
+ "rig",
+ "serde_json",
  "shadowai-agent",
  "shadowai-agent-ui-ipc",
  "shadowai-filesystem",

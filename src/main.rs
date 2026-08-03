@@ -1,9 +1,12 @@
+mod agents;
+
+use anyhow::Result;
 use dialoguer::{
     Editor,
     console::{Style, style},
 };
-use shadowai_agent::{AgentConfig, run_agent_loop};
-use shadowai_agent_ui_ipc::AgentUIIpcMessage;
+use rig::{completion::Chat, message::Message, providers::ollama};
+use shadowai_agent_ui_ipc::{AgentUIIpcMessage, AgentUIIpcSender};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]
@@ -15,7 +18,6 @@ async fn main() -> Result<(), anyhow::Error> {
 
         println!("{}", style(input).bold().magenta());
 
-        let config = AgentConfig::default();
         let (ui_sender, mut ui_receiver) = shadowai_agent_ui_ipc::get_ipc_channel();
 
         tokio::spawn(async move {
@@ -41,7 +43,36 @@ async fn main() -> Result<(), anyhow::Error> {
                 }
             }
         });
-        run_agent_loop(config, input.to_string(), ui_sender).await?;
+
+        run_agent_loop(input, ui_sender).await?;
+    }
+
+    Ok(())
+}
+
+async fn run_agent_loop(input: &str, sender: AgentUIIpcSender) -> Result<()> {
+    let client = ollama::Client::new("not needed")?;
+    let ipc_hook = shadowai_agent_ui_ipc::AgentUIIpcHook::new(sender);
+
+    let agent = agents::development::build(&client);
+
+    let mut prompt = input.to_string();
+
+    loop {
+        agent
+            .runner(prompt)
+            .add_hook(ipc_hook.clone())
+            .conversation("development")
+            .run()
+            .await?;
+
+        prompt = dialoguer::Input::<String>::new()
+            .with_prompt(format!("{}", style("> ").blue().bold()))
+            .interact_text()?;
+
+        if prompt == "exit" || prompt == "quit" {
+            break;
+        }
     }
 
     Ok(())

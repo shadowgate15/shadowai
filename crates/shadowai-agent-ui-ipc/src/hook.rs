@@ -6,6 +6,7 @@ use rig::agent::{
 
 use crate::{AgentUIIpcMessage, AgentUIIpcSender};
 
+#[derive(Clone)]
 pub struct AgentUIIpcHook(AgentUIIpcSender);
 
 impl AgentHook for AgentUIIpcHook {
