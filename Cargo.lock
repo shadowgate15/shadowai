@@ -6411,7 +6411,6 @@ dependencies = [
  "directories",
  "rig",
  "serde_json",
- "shadowai-agent",
  "shadowai-agent-ui-ipc",
  "shadowai-filesystem",
  "shadowai-shell",
@@ -6419,20 +6418,6 @@ dependencies = [
  "tokio",
  "tracing-appender",
  "tracing-subscriber",
-]
-
-[[package]]
-name = "shadowai-agent"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "rig",
- "serde_json",
- "shadowai-agent-ui-ipc",
- "shadowai-tools",
- "tokio",
- "tokio-stream",
- "tokio-util",
 ]
 
 [[package]]

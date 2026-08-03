@@ -43,7 +43,6 @@ pub struct AgentUIIpcMessageMetadata {
     run_id: String,
 }
 
-#[cfg(feature = "hook")]
 impl From<&rig::agent::HookContext> for AgentUIIpcMessageMetadata {
     fn from(ctx: &rig::agent::HookContext) -> Self {
         Self {

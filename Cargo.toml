@@ -1,6 +1,5 @@
 [workspace]
 members = [
-  "crates/shadowai-agent",
   "crates/shadowai-filesystem",
   "crates/shadowai-shell",
   "crates/shadowai-tools",
@@ -15,7 +14,6 @@ edition = "2024"
 [dependencies]
 anyhow.workspace = true
 directories = "6.0.0"
-shadowai-agent.workspace = true
 shadowai-filesystem.workspace = true
 shadowai-shell.workspace = true
 shadowai-tools.workspace = true
@@ -32,7 +30,6 @@ rig.workspace = true
 serde_json.workspace = true
 
 [workspace.dependencies]
-shadowai-agent = { path = "crates/shadowai-agent" }
 shadowai-filesystem = { path = "crates/shadowai-filesystem" }
 shadowai-shell = { path = "crates/shadowai-shell" }
 shadowai-tools = { path = "crates/shadowai-tools" }
