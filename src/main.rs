@@ -13,7 +13,10 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 async fn main() -> Result<(), anyhow::Error> {
     init_tracing();
 
-    if let Some(input) = Editor::new().edit("What would you like to work on?")? {
+    if let Some(input) = Editor::new()
+        .extension(".md")
+        .edit("What would you like to work on?")?
+    {
         let input = input.trim();
 
         println!("{}", style(input).bold().magenta());
